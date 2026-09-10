@@ -14,6 +14,12 @@ export interface InspectionProofItem {
   uploaderId: string;
   uploaderName: string;
   uploaderRole: 'manufacturer' | 'distributor' | 'retailer' | 'disposer' | 'host';
+  uploaderAddress?: string;
+  uploaderCity?: string;
+  uploaderState?: string;
+  uploaderPincode?: string;
+  uploaderPhone?: string;
+  uploaderLicense?: string;
   entityType: 'shipment' | 'disposal';
   entityId: string;
   shipmentNumber?: string;
@@ -297,6 +303,20 @@ export async function getProofInspections() {
         p.verificationStatus = 'suspect';
         duplicateSuspectCount++;
       }
+    }
+  }
+
+  // Enrich all proofs with registered uploader facility address & contact info
+  const userMap = new Map((db.users || []).map((u: any) => [u.id, u]));
+  for (const p of proofs) {
+    const u: any = userMap.get(p.uploaderId);
+    if (u) {
+      p.uploaderAddress = u.address || '';
+      p.uploaderCity = u.city || '';
+      p.uploaderState = u.state || '';
+      p.uploaderPincode = u.pincode || '';
+      p.uploaderPhone = u.phone || '';
+      p.uploaderLicense = u.licenseNumber || '';
     }
   }
 

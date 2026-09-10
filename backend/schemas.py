@@ -8,6 +8,12 @@ class UserBase(BaseModel):
     name: str
     email: EmailStr
     role: RoleEnum
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    pincode: Optional[str] = None
+    phone: Optional[str] = None
+    license_number: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str

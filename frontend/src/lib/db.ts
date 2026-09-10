@@ -15,6 +15,12 @@ export interface User {
   email: string;
   passwordHash: string;
   role: Role;
+  address?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  phone?: string;
+  licenseNumber?: string;
 }
 
 export interface Batch {
@@ -71,6 +77,8 @@ export interface Shipment {
   toId: string;
   toRole: Role;
   toName: string;
+  fromAddress?: string;
+  toAddress?: string;
   batchId: string;
   quantity: number;
   qrCode: string;

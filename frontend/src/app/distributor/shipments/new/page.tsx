@@ -333,15 +333,38 @@ function DistributorShipContent() {
                 name="toId"
                 value={selectedManufacturerId}
                 onChange={(e) => setSelectedManufacturerId(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white font-medium text-slate-900"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white font-medium text-slate-900 text-sm"
               >
                 <option value="">Select recipient manufacturer...</option>
                 {data?.manufacturers?.map((m: any) => (
                   <option key={m.id} value={m.id}>
-                    {m.name} ({m.email}) {selectedBatch?.manufacturerId === m.id ? '— (Original Manufacturer)' : ''}
+                    {m.name} — {m.city ? `${m.city}, ${m.state || ''}` : m.email} {selectedBatch?.manufacturerId === m.id ? '— (Original Manufacturer)' : ''}
                   </option>
                 ))}
               </select>
+              {(() => {
+                const selectedMfg = data?.manufacturers?.find((m: any) => m.id === selectedManufacturerId);
+                return selectedMfg && selectedMfg.address ? (
+                  <div className="mt-2 p-3 bg-violet-50/70 border border-violet-200/60 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-violet-900">
+                      <svg className="w-3.5 h-3.5 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Manufacturer Return Intake Facility</span>
+                    </div>
+                    <p className="text-slate-700 leading-relaxed pl-5">
+                      {selectedMfg.address}, {selectedMfg.city}, {selectedMfg.state} - <span className="font-mono font-semibold">{selectedMfg.pincode}</span>
+                    </p>
+                    {selectedMfg.phone && (
+                      <p className="text-slate-500 pl-5">
+                        Contact: <span className="font-medium text-slate-700">{selectedMfg.phone}</span>
+                        {selectedMfg.licenseNumber && ` · License: ${selectedMfg.licenseNumber}`}
+                      </p>
+                    )}
+                  </div>
+                ) : null;
+              })()}
               <p className="text-xs text-slate-500 mt-1">
                 {selectedBatch?.manufacturerName ? `Original Manufacturer: ${selectedBatch.manufacturerName}` : 'Select the manufacturing facility authorized to receive and quarantine this return.'}
               </p>
@@ -357,15 +380,38 @@ function DistributorShipContent() {
                 name="toId"
                 value={selectedRetailerId}
                 onChange={(e) => setSelectedRetailerId(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white text-sm"
               >
                 <option value="">Choose retailer...</option>
                 {data?.retailers?.map((r: any) => (
                   <option key={r.id} value={r.id}>
-                    {r.name} ({r.email})
+                    {r.name} — {r.city ? `${r.city}, ${r.state || ''}` : r.email}
                   </option>
                 ))}
               </select>
+              {(() => {
+                const selectedRetailer = data?.retailers?.find((r: any) => r.id === selectedRetailerId);
+                return selectedRetailer && selectedRetailer.address ? (
+                  <div className="mt-2 p-3 bg-violet-50/70 border border-violet-200/60 rounded-xl text-xs space-y-1">
+                    <div className="flex items-center gap-1.5 font-semibold text-violet-900">
+                      <svg className="w-3.5 h-3.5 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      <span>Retailer Courier Delivery Address</span>
+                    </div>
+                    <p className="text-slate-700 leading-relaxed pl-5">
+                      {selectedRetailer.address}, {selectedRetailer.city}, {selectedRetailer.state} - <span className="font-mono font-semibold">{selectedRetailer.pincode}</span>
+                    </p>
+                    {selectedRetailer.phone && (
+                      <p className="text-slate-500 pl-5">
+                        Contact: <span className="font-medium text-slate-700">{selectedRetailer.phone}</span>
+                        {selectedRetailer.licenseNumber && ` · License: ${selectedRetailer.licenseNumber}`}
+                      </p>
+                    )}
+                  </div>
+                ) : null;
+              })()}
             </div>
           )}
 

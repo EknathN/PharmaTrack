@@ -5,49 +5,91 @@
       "name": "Apex Pharmaceuticals Ltd",
       "email": "manufacturer@pharmatrack.com",
       "passwordHash": "$2b$10$aDhG41.raJ2TaChkcpk4guKD3rICyfuYuIIpFRuVuwpxdkAPJXrxq",
-      "role": "manufacturer"
+      "role": "manufacturer",
+      "address": "Plot 18-20, MIDC Industrial Area, Phase II, Turbhe",
+      "city": "Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400705",
+      "phone": "+91-22-2768-4500",
+      "licenseNumber": "MFG/MH/2021/78412"
     },
     {
       "id": "seed-distributor-01",
       "name": "Global Pharma Logistics",
       "email": "distributor@pharmatrack.com",
       "passwordHash": "$2b$10$aDhG41.raJ2TaChkcpk4guKD3rICyfuYuIIpFRuVuwpxdkAPJXrxq",
-      "role": "distributor"
+      "role": "distributor",
+      "address": "Central Warehouse Complex, Hub #4, Bhiwandi Road",
+      "city": "Thane",
+      "state": "Maharashtra",
+      "pincode": "421302",
+      "phone": "+91-2522-684900",
+      "licenseNumber": "DIST/MH/2022/90214"
     },
     {
       "id": "seed-retailer-01",
       "name": "City Care Pharmacy",
       "email": "retailer@pharmatrack.com",
       "passwordHash": "$2b$10$aDhG41.raJ2TaChkcpk4guKD3rICyfuYuIIpFRuVuwpxdkAPJXrxq",
-      "role": "retailer"
+      "role": "retailer",
+      "address": "Shop 4 & 5, Sunshine Heights, SV Road, Andheri West",
+      "city": "Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400058",
+      "phone": "+91-22-2620-8911",
+      "licenseNumber": "RET/MH/2020/43891"
     },
     {
       "id": "seed-disposer-01",
       "name": "EcoSafe Bio-Disposal Inc",
       "email": "disposer@pharmatrack.com",
       "passwordHash": "$2b$10$aDhG41.raJ2TaChkcpk4guKD3rICyfuYuIIpFRuVuwpxdkAPJXrxq",
-      "role": "disposer"
+      "role": "disposer",
+      "address": "Bio-Hazard Processing Zone, Sector 9, CETP Plant",
+      "city": "Taloja, Raigad",
+      "state": "Maharashtra",
+      "pincode": "410208",
+      "phone": "+91-22-2741-2300",
+      "licenseNumber": "DISP/PCB/2023/1104"
     },
     {
       "id": "user-distributor-aldrin",
       "name": "Aldrin Pharma Distributors",
       "email": "aldrinprajo08@gmail.com",
       "passwordHash": "$2b$10$W3O8wNJrh.7btVzefoMWWe5iEUhVFqLY4D5HfUd9nLOennlnQeLna",
-      "role": "distributor"
+      "role": "distributor",
+      "address": "Block C-12, Cargo Terminal Road, Sector 19, Vashi",
+      "city": "Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400703",
+      "phone": "+91-22-2789-5521",
+      "licenseNumber": "DIST/MH/2023/4412"
     },
     {
       "id": "user-disposer-eknath",
       "name": "Aakash Disposers Inc",
       "email": "eknath1303@gmail.com",
       "passwordHash": "$2b$10$W3O8wNJrh.7btVzefoMWWe5iEUhVFqLY4D5HfUd9nLOennlnQeLna",
-      "role": "disposer"
+      "role": "disposer",
+      "address": "Plot 77, Waste Management Industrial Park",
+      "city": "Rabale, Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400701",
+      "phone": "+91-22-2760-9944",
+      "licenseNumber": "DISP/PCB/2022/8931"
     },
     {
       "id": "seed-host-01",
       "name": "Central Drug Regulatory Authority (Host Control)",
       "email": "host@pharmatrack.com",
       "passwordHash": "$2b$10$aDhG41.raJ2TaChkcpk4guKD3rICyfuYuIIpFRuVuwpxdkAPJXrxq",
-      "role": "host"
+      "role": "host",
+      "address": "FDA Bhawan, Kotla Road, Near Bal Bhawan, ITO",
+      "city": "New Delhi",
+      "state": "Delhi",
+      "pincode": "110002",
+      "phone": "+91-11-2323-6975",
+      "licenseNumber": "CDSCO/HQ/2019/0001"
     }
   ],
   "batches": [],

@@ -363,6 +363,14 @@ export default function ProofInspectionsClient({ initialData }: ProofInspections
                     <p className="text-xs text-slate-500 mt-0.5">
                       Uploaded by <strong className="text-slate-800">{proof.uploaderName}</strong>
                     </p>
+                    {proof.uploaderAddress && (
+                      <div className="mt-1.5 flex items-start gap-1 text-[11px] text-slate-600 bg-slate-50 px-2 py-1 rounded-lg border border-slate-100">
+                        <span className="text-slate-400 shrink-0">📍</span>
+                        <span className="truncate" title={`${proof.uploaderAddress}, ${proof.uploaderCity} (${proof.uploaderPincode})`}>
+                          {proof.uploaderAddress}, {proof.uploaderCity} {proof.uploaderPincode ? `(${proof.uploaderPincode})` : ''}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Duplicate Reuse Warning */}
@@ -490,6 +498,16 @@ export default function ProofInspectionsClient({ initialData }: ProofInspections
                 <div>
                   Batch: <strong className="font-mono text-slate-900">{selectedProof.batchNumber || 'N/A'}</strong> · Medicine: <strong>{selectedProof.medicineName || 'N/A'}</strong>
                 </div>
+                {selectedProof.uploaderAddress && (
+                  <div className="text-slate-700 flex items-start gap-1 bg-slate-50 p-2 rounded-lg border border-slate-200/70">
+                    <span className="font-semibold text-slate-900 shrink-0">📍 Registered Facility:</span>
+                    <span>
+                      {selectedProof.uploaderName} — {selectedProof.uploaderAddress}, {selectedProof.uploaderCity}, {selectedProof.uploaderState} {selectedProof.uploaderPincode}
+                      {selectedProof.uploaderPhone ? ` (Phone: ${selectedProof.uploaderPhone})` : ''}
+                      {selectedProof.uploaderLicense ? ` · License: ${selectedProof.uploaderLicense}` : ''}
+                    </span>
+                  </div>
+                )}
                 {selectedProof.ocgCode && (
                   <div>
                     OCG Gatepass Key: <strong className="font-mono text-emerald-700">{selectedProof.ocgCode}</strong>

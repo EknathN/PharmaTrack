@@ -13,9 +13,19 @@ export async function registerUser(data: FormData) {
   const email = (data.get('email') as string)?.trim().toLowerCase();
   const password = (data.get('password') as string)?.trim();
   const role = data.get('role') as Role;
+  const address = (data.get('address') as string)?.trim();
+  const city = (data.get('city') as string)?.trim();
+  const state = (data.get('state') as string)?.trim();
+  const pincode = (data.get('pincode') as string)?.trim();
+  const phone = (data.get('phone') as string)?.trim();
+  const licenseNumber = (data.get('licenseNumber') as string)?.trim();
 
   if (!name || !email || !password || !role) {
-    return { error: 'All fields are required.' };
+    return { error: 'Name, email, password, and role are required.' };
+  }
+
+  if (!address || !city || !state || !pincode) {
+    return { error: 'Facility premises address, city, state, and PIN code are required for courier dispatch and regulatory inspection compliance.' };
   }
 
   const db = await readDb();
@@ -29,7 +39,13 @@ export async function registerUser(data: FormData) {
     name,
     email,
     passwordHash,
-    role
+    role,
+    address,
+    city,
+    state,
+    pincode,
+    phone: phone || undefined,
+    licenseNumber: licenseNumber || undefined
   };
 
   db.users.push(newUser);

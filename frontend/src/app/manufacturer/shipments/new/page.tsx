@@ -373,17 +373,46 @@ function RecipientSelect({ type, defaultValue }: { type: string; defaultValue?: 
     });
   }, [type, defaultValue]);
 
+  const selectedUser = users.find(u => u.id === selected);
+
   return (
-    <select
-      required
-      name="toId"
-      value={selected}
-      onChange={(e) => setSelected(e.target.value)}
-      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
-    >
-      <option value="">Choose recipient...</option>
-      {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
-    </select>
+    <div className="space-y-2">
+      <select
+        required
+        name="toId"
+        value={selected}
+        onChange={(e) => setSelected(e.target.value)}
+        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white text-sm"
+      >
+        <option value="">Choose recipient...</option>
+        {users.map(u => (
+          <option key={u.id} value={u.id}>
+            {u.name} — {u.city ? `${u.city}, ${u.state || ''}` : u.email}
+          </option>
+        ))}
+      </select>
+
+      {selectedUser && selectedUser.address && (
+        <div className="p-3 bg-blue-50/70 border border-blue-200/60 rounded-xl text-xs space-y-1">
+          <div className="flex items-center gap-1.5 font-semibold text-blue-900">
+            <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span>Registered Courier Delivery Address</span>
+          </div>
+          <p className="text-slate-700 leading-relaxed pl-5">
+            {selectedUser.address}, {selectedUser.city}, {selectedUser.state} - <span className="font-mono font-semibold">{selectedUser.pincode}</span>
+          </p>
+          {selectedUser.phone && (
+            <p className="text-slate-500 pl-5">
+              Contact: <span className="font-medium text-slate-700">{selectedUser.phone}</span>
+              {selectedUser.licenseNumber && ` · License: ${selectedUser.licenseNumber}`}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

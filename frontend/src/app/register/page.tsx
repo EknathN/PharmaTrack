@@ -119,6 +119,87 @@ export default function RegisterPage() {
             </div>
           </div>
 
+          {/* Facility Premises & Courier Logistics Address */}
+          <div className="pt-3 pb-1 border-t border-slate-100">
+            <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
+              <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">Facility & Courier Address</span>
+              <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-200/60">
+                For Delivery & Regulatory Audits
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-500 leading-tight">
+              Physical address used for courier shipping labels, OCG gatepass generation, and regulatory field inspections.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">Premises / Facility Street Address *</label>
+            <input 
+              required
+              name="address"
+              type="text" 
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800"
+              placeholder="e.g. Plot 18-20, MIDC Industrial Area, Phase II"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">City / District *</label>
+              <input 
+                required
+                name="city"
+                type="text" 
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800"
+                placeholder="e.g. Navi Mumbai"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">State / Province *</label>
+              <input 
+                required
+                name="state"
+                type="text" 
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800"
+                placeholder="e.g. Maharashtra"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">PIN / Postal Code *</label>
+              <input 
+                required
+                name="pincode"
+                type="text" 
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800 font-mono"
+                placeholder="e.g. 400705"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">Contact Phone</label>
+              <input 
+                name="phone"
+                type="tel" 
+                className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800"
+                placeholder="e.g. +91 98201 12345"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">
+              Drug License / Regulatory Permit No. <span className="text-slate-400 font-normal">(Optional)</span>
+            </label>
+            <input 
+              name="licenseNumber"
+              type="text" 
+              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 bg-white/60 focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-sm text-slate-800 font-mono uppercase"
+              placeholder="e.g. DL-20B/21B-MH-78412"
+            />
+          </div>
+
           <button 
             type="submit" 
             disabled={loading}

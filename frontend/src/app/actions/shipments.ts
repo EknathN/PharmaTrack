@@ -89,6 +89,14 @@ export async function createShipment(data: FormData) {
     now
   );
 
+  const fromUser = db.users.find(u => u.id === session.sub);
+  const fromAddress = fromUser?.address
+    ? [fromUser.address, fromUser.city, fromUser.state, fromUser.pincode].filter(Boolean).join(', ')
+    : undefined;
+  const toAddress = toUser?.address
+    ? [toUser.address, toUser.city, toUser.state, toUser.pincode].filter(Boolean).join(', ')
+    : undefined;
+
   const newShipment: Shipment = {
     id: shipmentId,
     shipmentNumber,
@@ -96,9 +104,11 @@ export async function createShipment(data: FormData) {
     fromId: session.sub,
     fromRole: session.role,
     fromName: session.name,
+    fromAddress,
     toId,
     toRole: toUser.role,
     toName: toUser.name,
+    toAddress,
     batchId,
     quantity,
     qrCode,
@@ -603,7 +613,19 @@ export async function getUsersByRole(role: string) {
   const session = await getCurrentSession();
   if (!session) return [];
   const db = await readDb();
-  return db.users.filter(u => u.role === role).map(u => ({ id: u.id, name: u.name, email: u.email }));
+  return db.users
+    .filter(u => u.role === role)
+    .map(u => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      address: u.address || '',
+      city: u.city || '',
+      state: u.state || '',
+      pincode: u.pincode || '',
+      phone: u.phone || '',
+      licenseNumber: u.licenseNumber || ''
+    }));
 }
 
 // ─── CHECK EXPIRY ALERTS ───
@@ -729,6 +751,15 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
         const batch = db.batches?.find((b: any) => b.id === s.batchId);
         const medName = batch?.medicineName || 'medicine';
 
+        const toUser = db.users?.find((u: any) => u.id === s.toId);
+        const toAddrStr = toUser?.address
+          ? ` [Destination: ${[toUser.address, toUser.city, toUser.pincode].filter(Boolean).join(', ')}]`
+          : '';
+        const fromUser = db.users?.find((u: any) => u.id === s.fromId);
+        const fromAddrStr = fromUser?.address
+          ? ` [Origin: ${[fromUser.address, fromUser.city, fromUser.pincode].filter(Boolean).join(', ')}]`
+          : '';
+
         if (s.type === 'forward') {
           // Alert Sender: ask to track/expedite
           const senderAlertExists = db.alerts.some(
@@ -738,7 +769,7 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
             createAlert(
               db,
               s.fromId,
-              `🚨 Delivery Overdue (>7 Days): Shipment #${s.shipmentNumber} (${s.quantity} units of ${medName}) dispatched to ${s.toName} has been in transit for ${daysInTransit} days without delivery confirmation! Please track package with courier immediately.`,
+              `🚨 Delivery Overdue (>7 Days): Shipment #${s.shipmentNumber} (${s.quantity} units of ${medName}) dispatched to ${s.toName}${toAddrStr} has been in transit for ${daysInTransit} days without delivery confirmation! Please track package with courier and conduct premises inspection if required.`,
               'danger',
               s.batchId,
               s.id
@@ -754,7 +785,7 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
             createAlert(
               db,
               s.toId,
-              `⚠️ Delayed Inbound Package: Shipment #${s.shipmentNumber} from ${s.fromName} (${s.quantity} units) has been in transit for ${daysInTransit} days and has not arrived. Please check courier transit status or complete intake.`,
+              `⚠️ Delayed Inbound Package: Shipment #${s.shipmentNumber} from ${s.fromName}${fromAddrStr} (${s.quantity} units) has been in transit for ${daysInTransit} days and has not arrived. Please check courier transit status or complete intake.`,
               'warning',
               s.batchId,
               s.id
@@ -770,7 +801,7 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
             createAlert(
               db,
               s.fromId,
-              `🚨 Return Delivery Overdue (>7 Days): Return Consignment #${s.shipmentNumber} to ${s.toName} has been in transit for ${daysInTransit} days. Please verify courier delivery status.`,
+              `🚨 Return Delivery Overdue (>7 Days): Return Consignment #${s.shipmentNumber} to ${s.toName}${toAddrStr} has been in transit for ${daysInTransit} days. Please verify courier delivery status or inspect facility premises.`,
               'danger',
               s.batchId,
               s.id
@@ -786,7 +817,7 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
             createAlert(
               db,
               s.toId,
-              `⚠️ Overdue Return Consignment (>7 Days): Return Shipment #${s.shipmentNumber} from ${s.fromName} (${s.quantity} units of ${medName}) has not been received after ${daysInTransit} days in transit. Review and intake consignment.`,
+              `⚠️ Overdue Return Consignment (>7 Days): Return Shipment #${s.shipmentNumber} from ${s.fromName}${fromAddrStr} (${s.quantity} units of ${medName}) has not been received after ${daysInTransit} days in transit. Review and intake consignment.`,
               'warning',
               s.batchId,
               s.id
@@ -805,6 +836,10 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
         const elapsed = now - new Date(o.createdAt).getTime();
         if (elapsed >= SEVEN_DAYS_MS) {
           const daysPending = Math.floor(elapsed / (24 * 60 * 60 * 1000));
+          const buyer = db.users?.find((u: any) => u.id === o.buyerId);
+          const buyerAddrStr = buyer?.address
+            ? ` [Delivery Premises: ${[buyer.address, buyer.city, buyer.pincode].filter(Boolean).join(', ')}]`
+            : '';
 
           // Alert Supplier: asks him to ship the package
           const supplierAlertExists = db.alerts.some(
@@ -814,7 +849,7 @@ export async function checkOverdueShipmentsAndOrders(db: any) {
             createAlert(
               db,
               o.supplierId,
-              `⚠️ Action Required: Purchase Order #${o.orderNumber} for ${o.quantity} units of ${o.medicineName} was placed by ${o.buyerName} ${daysPending} days ago and has NOT been shipped! Please dispatch the package immediately.`,
+              `⚠️ Action Required: Purchase Order #${o.orderNumber} for ${o.quantity} units of ${o.medicineName} was placed by ${o.buyerName}${buyerAddrStr} ${daysPending} days ago and has NOT been shipped! Please dispatch courier immediately.`,
               'danger'
             );
             hasChanges = true;
@@ -859,8 +894,28 @@ export async function getDistributorDashboard() {
   const alerts = db.alerts.filter(a => a.userId === session.sub && !a.isRead)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
-  const retailers = db.users.filter(u => u.role === 'retailer').map(u => ({ id: u.id, name: u.name, email: u.email }));
-  const manufacturers = db.users.filter(u => u.role === 'manufacturer').map(u => ({ id: u.id, name: u.name, email: u.email }));
+  const retailers = db.users.filter(u => u.role === 'retailer').map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    address: u.address || '',
+    city: u.city || '',
+    state: u.state || '',
+    pincode: u.pincode || '',
+    phone: u.phone || '',
+    licenseNumber: u.licenseNumber || ''
+  }));
+  const manufacturers = db.users.filter(u => u.role === 'manufacturer').map(u => ({
+    id: u.id,
+    name: u.name,
+    email: u.email,
+    address: u.address || '',
+    city: u.city || '',
+    state: u.state || '',
+    pincode: u.pincode || '',
+    phone: u.phone || '',
+    licenseNumber: u.licenseNumber || ''
+  }));
 
   const enrichedInventory = inventory.map(inv => ({ ...inv, batch: db.batches.find(b => b.id === inv.batchId) }));
 
