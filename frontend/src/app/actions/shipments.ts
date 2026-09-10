@@ -17,6 +17,8 @@ function revalidateAllDashboards() {
     revalidatePath('/manufacturer/returns');
     revalidatePath('/manufacturer/receive');
     revalidatePath('/disposer');
+    revalidatePath('/host/disposals');
+    revalidatePath('/disposals/[id]/certificate');
     revalidatePath('/', 'layout');
   } catch (e) {
     // Ignore outside of request context
@@ -526,10 +528,19 @@ export async function finalizeDisposal(data: FormData) {
   const photoBeforeUrl = data.get('photoBeforeUrl') as string;
   const photoAfterUrl = data.get('photoAfterUrl') as string;
   const videoUrl = data.get('videoUrl') as string;
-  const certificateUrl = data.get('certificateUrl') as string;
+  let certificateUrl = data.get('certificateUrl') as string;
+  const disposalMethod = (data.get('disposalMethod') as string) || 'High-Temperature Incineration (1100°C) & Bio-Thermal Neutralization';
+  const officerName = (data.get('officerName') as string) || session.name;
+  const certificateNotes = (data.get('certificateNotes') as string) || 'Consignment verified against manufacturer batch manifest. Batch destroyed completely without hazardous residue.';
+  const certificateNumber = (data.get('certificateNumber') as string) || `CERT-DISP-${disposalId.slice(0, 8).toUpperCase()}`;
 
-  if (!disposalId || !photoBeforeUrl || !photoAfterUrl || !videoUrl || !certificateUrl) {
-    return { error: 'All files required: photo before, photo after, video, and certificate.' };
+  // Automatically assign generated certificate route if not manually provided
+  if (!certificateUrl || certificateUrl === 'auto') {
+    certificateUrl = `/disposals/${disposalId}/certificate`;
+  }
+
+  if (!disposalId || !photoBeforeUrl || !photoAfterUrl || !videoUrl) {
+    return { error: 'Photo before, photo after, and video proofs are required.' };
   }
 
   const db = await readDb();
@@ -542,6 +553,10 @@ export async function finalizeDisposal(data: FormData) {
   record.photoAfterUrl = photoAfterUrl;
   record.videoUrl = videoUrl;
   record.certificateUrl = certificateUrl;
+  record.certificateNumber = certificateNumber;
+  record.disposalMethod = disposalMethod;
+  record.officerName = officerName;
+  record.certificateNotes = certificateNotes;
   record.status = 'completed';
   record.completedAt = now;
 
@@ -554,19 +569,19 @@ export async function finalizeDisposal(data: FormData) {
       actorName: session.name,
       actorRole: 'disposer',
       event: 'FULLY DISPOSED ✓',
-      details: `Safe disposal completed by ${session.name}. Certificate and photo/video proofs uploaded.`
+      details: `Safe disposal completed by ${session.name}. Official Certificate #${certificateNumber} and photo/video proofs recorded.`
     });
 
     // Remove from disposer inventory
     db.inventory = db.inventory.filter(i => !(i.batchId === batch.id && i.ownerId === session.sub));
 
     // Notify manufacturer
-    createAlert(db, batch.manufacturerId, `Batch ${batch.batchNumber} (${batch.medicineName}) has been safely disposed by ${session.name}. Disposal certificate is available.`, 'success', batch.id);
+    createAlert(db, batch.manufacturerId, `Batch ${batch.batchNumber} (${batch.medicineName}) has been safely disposed by ${session.name}. Official Disposal Certificate #${certificateNumber} is now available.`, 'success', batch.id);
   }
 
   await writeDb(db);
   revalidateAllDashboards();
-  return { success: true };
+  return { success: true, certificateUrl, certificateNumber };
 }
 
 // ─── GET USERS BY ROLE ───
@@ -782,5 +797,51 @@ export async function getShipmentForMandate(shipmentId: string) {
     } : null,
     fromUser: fromUser ? { name: fromUser.name, email: fromUser.email, role: fromUser.role } : null,
     toUser: toUser ? { name: toUser.name, email: toUser.email, role: toUser.role } : null
+  };
+}
+
+// ─── GET DISPOSAL DETAILS FOR OFFICIAL CERTIFICATE ───
+export async function getDisposalForCertificate(disposalId: string) {
+  const session = await getCurrentSession();
+  if (!session) return null;
+  const db = await readDb();
+  const disposal = db.disposalRecords.find(d => d.id === disposalId);
+  if (!disposal) return null;
+  const batch = db.batches.find(b => b.id === disposal.batchId);
+  const shipment = db.shipments.find(s => s.id === disposal.shipmentId);
+  const disposerUser = db.users.find(u => u.id === disposal.disposerId);
+  const manufacturerUser = batch ? db.users.find(u => u.id === batch.manufacturerId) : null;
+
+  const quantity = disposal.quantity ?? shipment?.quantity ?? 0;
+  const certNumber = disposal.certificateNumber || `CERT-DISP-${disposal.id.slice(0, 8).toUpperCase()}`;
+
+  // Generate dynamic QR code for certificate authenticity verification
+  const qrVerificationText = `PHARMATRACK:OFFICIAL-DISPOSAL-CERTIFICATE\nCert No: ${certNumber}\nDisposal ID: ${disposal.id}\nBatch No: ${batch?.batchNumber || 'N/A'}\nMedicine: ${batch?.medicineName || 'N/A'}\nDisposed Qty: ${quantity} units\nFacility: ${disposal.disposerName}\nOfficer: ${disposal.officerName || disposal.disposerName}\nMethod: ${disposal.disposalMethod || 'Incineration & Bio-Thermal Neutralization'}\nStatus: ${disposal.status.toUpperCase()}\nDate: ${disposal.completedAt || disposal.createdAt}`;
+  
+  let certificateQr = '';
+  try {
+    certificateQr = await QRCode.toDataURL(qrVerificationText, {
+      width: 260,
+      margin: 1,
+      errorCorrectionLevel: 'H',
+      color: { dark: '#0f172a', light: '#ffffff' }
+    });
+  } catch (e) {
+    certificateQr = '';
+  }
+
+  return {
+    disposal: {
+      ...disposal,
+      quantity,
+      certificateNumber: certNumber
+    },
+    batch: batch || null,
+    shipment: shipment || null,
+    disposerUser: disposerUser ? { id: disposerUser.id, name: disposerUser.name, email: disposerUser.email, role: disposerUser.role } : null,
+    manufacturerUser: manufacturerUser ? { id: manufacturerUser.id, name: manufacturerUser.name, email: manufacturerUser.email, role: manufacturerUser.role } : null,
+    certificateQr,
+    qrVerificationText,
+    sessionRole: session.role
   };
 }

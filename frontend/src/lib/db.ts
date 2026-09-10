@@ -108,6 +108,10 @@ export interface DisposalRecord {
   photoAfterUrl?: string;
   videoUrl?: string;
   certificateUrl?: string;
+  certificateNumber?: string;
+  disposalMethod?: string;
+  officerName?: string;
+  certificateNotes?: string;
   status: 'pending' | 'completed';
   completedAt?: string;
   createdAt: string;
