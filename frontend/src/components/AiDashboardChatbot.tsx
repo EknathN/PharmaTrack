@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getAiDashboardContext, AiDashboardContext } from "@/app/actions/aiChat";
 import { askPuterAi, loadPuterScript } from "@/lib/puterAi";
+import FormattedAiMessage from "@/components/FormattedAiMessage";
 
 interface Message {
   id: string;
@@ -93,7 +94,7 @@ export default function AiDashboardChatbot() {
             {
               id: "welcome-1",
               role: "assistant",
-              content: `Hello **${ctx.userName}**! 👋 I am your **PharmaTrack AI Analyst** powered by Puter AI.\n\nI have analyzed your live **${ctx.role.toUpperCase()}** dashboard. Ask me anything about:\n- 📊 **Sales & inventory summaries**\n- 🔮 **Stockout risk & depletion predictions**\n- 💡 **Reorder recommendations & quantities**\n- ⚠️ **Near-expiry risks & returns**`,
+              content: `Hello **${ctx.userName}**! 👋 I am your **PharmaTrack AI Copilot**.\n\nI have analyzed your live **${ctx.role.toUpperCase()}** dashboard. Ask me anything about:\n- 📊 **Sales & inventory summaries**\n- 🔮 **Stockout risk & depletion predictions**\n- 💡 **Reorder recommendations & quantities**\n- ⚠️ **Near-expiry risks & returns**`,
               timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
             },
           ]);
@@ -182,7 +183,7 @@ export default function AiDashboardChatbot() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span>Puter AI Analyst Ready</span>
+            <span>PharmaTrack AI Copilot</span>
           </div>
         )}
 
@@ -190,8 +191,8 @@ export default function AiDashboardChatbot() {
           id="ai-chatbot-toggle-btn"
           onClick={() => setIsOpen((prev) => !prev)}
           className={`relative p-3.5 sm:p-4 rounded-full bg-gradient-to-r ${theme.gradient} text-white shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 flex items-center justify-center focus:outline-none focus:ring-4 ${theme.ringColor}/40`}
-          aria-label="Open AI Dashboard Chatbot"
-          title="Open AI Dashboard Chatbot (Powered by Puter)"
+          aria-label="Open PharmaTrack AI Copilot"
+          title="Open PharmaTrack AI Intelligence Copilot"
         >
           {isOpen ? (
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -218,7 +219,7 @@ export default function AiDashboardChatbot() {
 
       {/* ─── CHAT DRAWER / WINDOW ─── */}
       {isOpen && (
-        <div className="fixed bottom-20 right-3 sm:right-5 z-50 w-[calc(100vw-24px)] sm:w-[460px] max-w-[480px] h-[580px] max-h-[calc(100vh-100px)] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans">
+        <div className="fixed bottom-20 right-3 sm:right-5 z-50 w-[calc(100vw-24px)] sm:w-[480px] max-w-[500px] h-[600px] max-h-[calc(100vh-100px)] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-in slide-in-from-bottom-5 duration-200 font-sans">
           {/* Header */}
           <div className={`p-4 bg-gradient-to-r ${theme.gradient} text-white flex items-center justify-between shadow-md`}>
             <div className="flex items-center gap-3">
@@ -228,8 +229,8 @@ export default function AiDashboardChatbot() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-sm sm:text-base leading-tight">PharmaTrack AI</h3>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/20 text-white/90 font-medium">
-                    Puter AI
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/20 text-white font-semibold border border-white/20">
+                    Copilot
                   </span>
                 </div>
                 <p className="text-[11px] text-white/80 mt-0.5 flex items-center gap-1.5">
@@ -294,13 +295,17 @@ export default function AiDashboardChatbot() {
                 className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"} max-w-full`}
               >
                 <div
-                  className={`rounded-2xl px-3.5 py-2.5 text-xs sm:text-sm leading-relaxed max-w-[90%] shadow-sm ${
+                  className={`rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed shadow-xs transition-all ${
                     m.role === "user"
-                      ? `${theme.userBubble} rounded-tr-none font-medium`
-                      : "bg-white text-slate-800 border border-slate-100 rounded-tl-none prose prose-sm prose-slate max-w-none"
+                      ? `${theme.userBubble} rounded-tr-none font-medium max-w-[85%]`
+                      : "bg-white text-slate-800 border border-slate-200/90 rounded-tl-none w-full max-w-[96%] shadow-xs"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-sans break-words">{m.content}</div>
+                  {m.role === "user" ? (
+                    <div className="whitespace-pre-wrap font-sans break-words">{m.content}</div>
+                  ) : (
+                    <FormattedAiMessage content={m.content} />
+                  )}
                 </div>
                 <span className="text-[10px] text-slate-400 mt-1 px-1 font-mono">{m.timestamp}</span>
               </div>
@@ -308,11 +313,11 @@ export default function AiDashboardChatbot() {
 
             {isThinking && (
               <div className="flex flex-col items-start max-w-full">
-                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-sm flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce"></span>
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-2 h-2 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]"></span>
-                  <span className="text-xs text-slate-500 font-medium ml-1">Puter AI analyzing your dashboard...</span>
+                <div className="bg-white border border-slate-200 rounded-2xl rounded-tl-none px-4 py-3 shadow-xs flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-violet-500 animate-bounce"></span>
+                  <span className="w-2 h-2 rounded-full bg-violet-500 animate-bounce [animation-delay:0.2s]"></span>
+                  <span className="w-2 h-2 rounded-full bg-violet-500 animate-bounce [animation-delay:0.4s]"></span>
+                  <span className="text-xs text-slate-600 font-medium ml-1">PharmaTrack AI is analyzing your dashboard...</span>
                 </div>
               </div>
             )}
@@ -332,7 +337,7 @@ export default function AiDashboardChatbot() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={`Ask Puter AI about your ${role} data...`}
+                placeholder={`Ask PharmaTrack AI about your ${role} data...`}
                 disabled={isThinking}
                 className="flex-1 px-3.5 py-2.5 text-xs sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:bg-white text-slate-800 placeholder-slate-400"
               />
@@ -348,8 +353,8 @@ export default function AiDashboardChatbot() {
               </button>
             </form>
             <div className="flex items-center justify-between mt-1.5 px-1 text-[10px] text-slate-400">
-              <span>Strictly restricted to your dashboard operations</span>
-              <span className="font-mono">Puter.js AI</span>
+              <span>Grounded in your live authenticated records</span>
+              <span className="font-mono font-medium text-slate-500">PharmaTrack AI</span>
             </div>
           </div>
         </div>

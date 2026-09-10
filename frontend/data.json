@@ -138,6 +138,14 @@
           "actorRole": "retailer",
           "event": "Received by retailer — City Care Pharmacy",
           "details": "100 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-10T21:24:04.890Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Shipment Created → Apex Pharmaceuticals Ltd (manufacturer)",
+          "details": "Shipment #SHP-4002869, Qty: 60. OCG Security Key: OCG-SEC-99E5-A7E4-F993"
         }
       ],
       "createdAt": "2026-09-10T13:53:37.565Z"
@@ -155,7 +163,7 @@
       "qrData": "Manufacturer: Apex Pharmaceuticals Ltd\nMedicine: paracetamol (Dolo-650 mg)\nBatch No: BN-202609-6384\nMfg Date: 10-09-2026\nExp Date: 12-09-2026\nStrips: 10 tablets/ strip\nTotal Quantity: 1000 units\nBatch ID: 54e8cf68-fdc1-4c62-a944-d86652768a01",
       "manufacturerId": "seed-manufacturer-01",
       "manufacturerName": "Apex Pharmaceuticals Ltd",
-      "status": "near_expiry",
+      "status": "return_in_transit",
       "history": [
         {
           "timestamp": "2026-09-10T14:20:07.304Z",
@@ -212,6 +220,46 @@
           "actorRole": "retailer",
           "event": "Received by retailer — City Care Pharmacy",
           "details": "1000 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-10T21:19:22.437Z",
+          "actorId": "seed-retailer-01",
+          "actorName": "City Care Pharmacy",
+          "actorRole": "retailer",
+          "event": "Near-Expiry Return Initiated",
+          "details": "1000 units being returned to Global Pharma Logistics. Return Shipment #RET-4641058 created."
+        },
+        {
+          "timestamp": "2026-09-10T21:20:51.587Z",
+          "actorId": "seed-retailer-01",
+          "actorName": "City Care Pharmacy",
+          "actorRole": "retailer",
+          "event": "Dispatch Confirmed — In Transit",
+          "details": "Courier POD & OCG Sheet uploaded (OCG: OCG-SEC-AE6C-D9E6-9F67). Order alignment verified. Shipment #RET-4641058 now in transit to Global Pharma Logistics."
+        },
+        {
+          "timestamp": "2026-09-10T21:21:38.738Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Received by distributor — Global Pharma Logistics",
+          "details": "1000 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-10T21:22:03.296Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Shipment Created → Apex Pharmaceuticals Ltd (manufacturer)",
+          "details": "Shipment #SHP-4764819, Qty: 1000. OCG Security Key: OCG-SEC-5AF0-3C85-50BD"
+        },
+        {
+          "timestamp": "2026-09-10T21:22:38.489Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Dispatch Confirmed — In Transit",
+          "details": "Courier POD & OCG Sheet uploaded (OCG: OCG-SEC-5AF0-3C85-50BD). Order alignment verified. Shipment #SHP-4764819 now in transit to Apex Pharmaceuticals Ltd."
         }
       ],
       "createdAt": "2026-09-10T14:20:07.304Z"
@@ -233,22 +281,6 @@
       "ownerRole": "retailer",
       "quantity": 0,
       "status": "in_stock"
-    },
-    {
-      "id": "inv-distributor-dolo-01",
-      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
-      "ownerId": "seed-distributor-01",
-      "ownerRole": "distributor",
-      "quantity": 60,
-      "status": "in_stock"
-    },
-    {
-      "id": "58e9c3f8-c674-4ff6-b176-1d2187ef3d4b",
-      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
-      "ownerId": "seed-retailer-01",
-      "ownerRole": "retailer",
-      "quantity": 1000,
-      "status": "near_expiry"
     }
   ],
   "shipments": [
@@ -335,6 +367,72 @@
       "updatedAt": "2026-09-10T14:24:48.795Z",
       "senderProofUrl": "/uploads/1789050205351-av0q5lo.png",
       "receiverProofUrl": "/uploads/1789050286695-3rphjjz.png"
+    },
+    {
+      "id": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "shipmentNumber": "RET-4641058",
+      "type": "return",
+      "fromId": "seed-retailer-01",
+      "fromRole": "retailer",
+      "fromName": "City Care Pharmacy",
+      "toId": "seed-distributor-01",
+      "toRole": "distributor",
+      "toName": "Global Pharma Logistics",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "quantity": 1000,
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "PHARMATRACK:SHIPMENT:0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "status": "received",
+      "ocgVerificationCode": "OCG-SEC-AE6C-D9E6-9F67",
+      "notes": "Near-expiry return",
+      "createdAt": "2026-09-10T21:19:22.437Z",
+      "updatedAt": "2026-09-10T21:21:38.738Z",
+      "senderProofUrl": "/uploads/1789075244802-0azqcul.png",
+      "senderOcgProofUrl": "/uploads/1789075249010-g2rbr9n.png",
+      "receiverProofUrl": "/uploads/1789075289634-til0r67.png",
+      "receiverOcgProofUrl": "/uploads/1789075296624-19aq6b4.png"
+    },
+    {
+      "id": "6a8c876a-3a74-4ba3-ba7a-e6ce98230073",
+      "shipmentNumber": "SHP-4764819",
+      "type": "return",
+      "fromId": "seed-distributor-01",
+      "fromRole": "distributor",
+      "fromName": "Global Pharma Logistics",
+      "toId": "seed-manufacturer-01",
+      "toRole": "manufacturer",
+      "toName": "Apex Pharmaceuticals Ltd",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "quantity": 1000,
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "PHARMATRACK:SHIPMENT:6a8c876a-3a74-4ba3-ba7a-e6ce98230073",
+      "status": "in_transit",
+      "ocgVerificationCode": "OCG-SEC-5AF0-3C85-50BD",
+      "notes": null,
+      "createdAt": "2026-09-10T21:22:03.296Z",
+      "updatedAt": "2026-09-10T21:22:38.489Z",
+      "senderProofUrl": "/uploads/1789075350495-2zbh6fc.png",
+      "senderOcgProofUrl": "/uploads/1789075357050-6jh8o3b.png"
+    },
+    {
+      "id": "4cbae245-b92a-42b1-8f4d-97b12e7c3f8f",
+      "shipmentNumber": "SHP-4002869",
+      "type": "return",
+      "fromId": "seed-distributor-01",
+      "fromRole": "distributor",
+      "fromName": "Global Pharma Logistics",
+      "toId": "seed-manufacturer-01",
+      "toRole": "manufacturer",
+      "toName": "Apex Pharmaceuticals Ltd",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "quantity": 60,
+      "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAAAklEQVR4AewaftIAAAiuSURBVO3BwXUdCQ4EwSw8+u9yrRxY8NDT+gSVEekfSNIBgyQdMUjSEYMkHTFI0hGDJB0xSNIRgyQdMUjSEYMkHTFI0hGDJB0xSNIRgyQdMUjSEYMkHTFI0hFf/AeS8Ju15W1J2LRlk4Q3teWpJDzRlk0SNm3ZJGHTlrcl4TdryxODJB0xSNIRgyQdMUjSEYMkHTFI0hGDJB3xxV/Qlp8sCde1ZZOEn64tmyRs2rJJwqYtTyRh05an2vKTJeFNgyQdMUjSEYMkHTFI0hGDJB0xSNIRgyQd8cUPkIQ3teVtSbisLZskvC0Jm7ZskrBpyyYJm7b8dEl4U1s+aZCkIwZJOmKQpCMGSTpikKQjBkk6YpCkI77Qj9CWN7Vlk4S3teVNbdkkYdOWTRL0WYMkHTFI0hGDJB0xSNIRgyQdMUjSEYMkHfGFfoQkvKktm7ZskrBpy3eS8ERb3pSETVv0WYMkHTFI0hGDJB0xSNIRgyQdMUjSEYMkHfHFD9CWf11bPikJTyThO23ZJOGT2rJJwhNteVtbfrNBko4YJOmIQZKOGCTpiEGSjhgk6YhBko744i9Iwr+uLZskbNqyScKmLU+0ZZOET0vCpi2bJGzasknC25LwLxsk6YhBko4YJOmIQZKOGCTpiEGSjhgk6Ygv/gNt0c+WhE1bNknYtOU7SXhTWz6pLU+1Rf/fIElHDJJ0xCBJRwySdMQgSUcMknTEIElHDJJ0xBf/gSRs2rJJwk/Wlu+0ZZOEJ5LwRFs2SXhbW55IwhNteVMSNm35ThJ+srZ80iBJRwySdMQgSUcMknTEIElHDJJ0xCBJR3zxA7Rlk4Q3teXT2qJdW55IwpvasknCU215UxJ+skGSjhgk6YhBko4YJOmIQZKOGCTpiEGSjvjigLa8KQlva8smCZu2vKktTyThO23ZJOEnS8ITbXkqCW9qyyYJT7TliUGSjhgk6YhBko4YJOmIQZKOGCTpiEGSjkj/4KEkPNGWTRKeaMsTSfhOWzZJeKItb0rCE235tCRs2vJEEjZt+bQkbNpy2SBJRwySdMQgSUcMknTEIElHDJJ0xCBJR6R/8FASPqktTyThqbbomSRs2rJJwk/Wlu8kYdOWJ5KwacsTSdi05YlBko4YJOmIQZKOGCTpiEGSjhgk6YhBko744oC2PJGETVveloRNWzZJeKItmyS8rS2btjzRlk0SnmjLE0l4KglvSsKmLZ80SNIRgyQdMUjSEYMkHTFI0hGDJB0xSNIR6R88lITfrC3fScKmLZskvKktP10SPqktmyS8rS2flIQn2vKmQZKOGCTpiEGSjhgk6YhBko4YJOmIQZKO+OIvaMsmCU+05bdry5uSsGnLJglva8sTSXiiLZskbNrynSQ80ZYn2rJJwiYJm7Y8MUjSEYMkHTFI0hGDJB0xSNIRgyQdMUjSEV/8BUnYtOWTkrBpy1NJ2LRlk4RNWzZJeFNbfrskbNryVFs2SXgiCZu2PNGWNw2SdMQgSUcMknTEIElHDJJ0xCBJRwySdMQgSUekf/DLJWHTlqeSsGnLJgmbtmyScF1bPikJn9aWJ5KwactlgyQdMUjSEYMkHTFI0hGDJB0xSNIRgyQd8cV/IAmbtnxSWzZJ2LTlO23ZJOFNbdkkYdOWtyXhiST8ZG3ZJOFtbfmkJGza8sQgSUcMknTEIElHDJJ0xCBJRwySdMQgSUd88R9oyxNJeKItmyRs2vJUEjZt2SThJ0vC25KwacubkrBpyyYJm7Y8lYRNWzZJ2LRlk4RNW940SNIRgyQdMUjSEYMkHTFI0hGDJB0xSNIR6R98WBLe1JZNEjZteSoJ/7q2PJGETVs2Sdi05YkkvK0tTyRh05YnkrBpyxODJB0xSNIRgyQdMUjSEYMkHTFI0hGDJB2R/sFDSdi05YkkvKktn5aEJ9rypiRs2vJUEj6pLU8kYdOW7yRh05ZNEt7Ulk8aJOmIQZKOGCTpiEGSjhgk6YhBko4YJOmIL36BtmySsEnCp7XlsiR8py2btmySsGnLJglPJGHTlqfasknCpi1PJGGThE1b3jRI0hGDJB0xSNIRgyQdMUjSEYMkHTFI0hHpHzyUhE1bNknYtGWThCfa8lQSNm3ZJGHTljcl4Ym2fCcJT7TlsiT8dG3ZJOGJtjwxSNIRgyQdMUjSEYMkHTFI0hGDJB0xSNIRX/wAbdkk4U1J2LTlqSRs2rJJwqYtT7Rlk4RPS8KmLZskbNqyScJ1bXmiLZskvGmQpCMGSTpikKQjBkk6YpCkIwZJOmKQpCPSP9BjSdi0ZZOETVs2SXhTWzZJ+E5bfrMkbNrytiRs2nLZIElHDJJ0xCBJRwySdMQgSUcMknTEIElHDJJ0xBf/gST8Zm35Tls+qS2bJLypLU8l4V+XhE1bPikJT7TliUGSjhgk6YhBko4YJOmIQZKOGCTpiEGSjvjiL2jLT5aEp5KwacumLZskbNryRFs2Sdi05am2PJGETVvelISn2vJJSdi05ZMGSTpikKQjBkk6YpCkIwZJOmKQpCMGSTriix8gCW9qy2+XhCeSsGnL25LwpiR8UhJ+urb8ZIMkHTFI0hGDJB0xSNIRgyQdMUjSEYMkHfGF/ookbNryprY8kYSn2rJpy0+WhN8uCZu2fNIgSUcMknTEIElHDJJ0xCBJRwySdMQgSUd8oX9CEp5oy6clQc8k4bJBko4YJOmIQZKOGCTpiEGSjhgk6YhBko744gdoy3Vt2SRhk4RNW55IwpuS8FRbNm3ZJGHTlk0SPq0tlyVh05YnBkk6YpCkIwZJOmKQpCMGSTpikKQjBkk64ou/IAm/XRL+ZW15KglPtGWThE1bNknYtOVtSfiktmza8qZBko4YJOmIQZKOGCTpiEGSjhgk6YhBko5I/0CSDhgk6YhBko4YJOmIQZKOGCTpiEGSjhgk6YhBko4YJOmIQZKOGCTpiEGSjhgk6YhBko4YJOmI/wEYpeJN+D5/1AAAAABJRU5ErkJggg==",
+      "qrData": "PHARMATRACK:SHIPMENT:4cbae245-b92a-42b1-8f4d-97b12e7c3f8f",
+      "status": "awaiting_proof",
+      "ocgVerificationCode": "OCG-SEC-99E5-A7E4-F993",
+      "notes": null,
+      "createdAt": "2026-09-10T21:24:04.890Z",
+      "updatedAt": "2026-09-10T21:24:04.890Z"
     }
   ],
   "sales": [
@@ -676,6 +774,106 @@
       "type": "warning",
       "isRead": false,
       "createdAt": "2026-09-10T14:24:50.879Z"
+    },
+    {
+      "id": "af91332a-4c40-437a-9501-ed306baed83b",
+      "userId": "seed-distributor-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "message": "Return shipment incoming from City Care Pharmacy — 1000 units of paracetamol (Dolo-650 mg) (Near Expiry). Shipment #RET-4641058.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:19:22.438Z"
+    },
+    {
+      "id": "be20f411-8120-47e7-b839-61091defcefa",
+      "userId": "seed-retailer-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "message": "Return shipment #RET-4641058 created. Upload courier proof to confirm dispatch.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:19:22.438Z"
+    },
+    {
+      "id": "f79b8836-ed92-49be-a60e-b4ee6fe0ca44",
+      "userId": "seed-distributor-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "message": "Shipment #RET-4641058 from City Care Pharmacy is now in transit with verified OCG Gatepass.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:20:51.587Z"
+    },
+    {
+      "id": "24670a09-3923-4eb4-9af4-b9cf29313c81",
+      "userId": "seed-retailer-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "message": "Shipment #RET-4641058 received by Global Pharma Logistics. 1000 units confirmed.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:21:38.738Z"
+    },
+    {
+      "id": "00793833-dde5-42a0-bcef-3c049aa0dbe9",
+      "userId": "seed-distributor-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "0777d5fe-12d3-48fd-8a15-cbe1e5decb4b",
+      "message": "You received 1000 units of paracetamol (Dolo-650 mg) (BN-202609-6384). Stock added to inventory.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:21:38.738Z"
+    },
+    {
+      "id": "b783a050-648c-4bff-9c7b-10253ff64a4b",
+      "userId": "seed-manufacturer-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "6a8c876a-3a74-4ba3-ba7a-e6ce98230073",
+      "message": "New shipment incoming from Global Pharma Logistics. Shipment #SHP-4764819 — 1000 units of paracetamol (Dolo-650 mg).",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:22:03.297Z"
+    },
+    {
+      "id": "48badc60-9517-4341-951b-a70eb0705604",
+      "userId": "seed-distributor-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "6a8c876a-3a74-4ba3-ba7a-e6ce98230073",
+      "message": "Shipment #SHP-4764819 created. Upload courier proof & OCG security sheet to confirm dispatch.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:22:03.297Z"
+    },
+    {
+      "id": "1210ed91-6c66-4f18-b8dc-2202368b6798",
+      "userId": "seed-manufacturer-01",
+      "batchId": "54e8cf68-fdc1-4c62-a944-d86652768a01",
+      "shipmentId": "6a8c876a-3a74-4ba3-ba7a-e6ce98230073",
+      "message": "Shipment #SHP-4764819 from Global Pharma Logistics is now in transit with verified OCG Gatepass.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:22:38.489Z"
+    },
+    {
+      "id": "f1f34294-923c-48e3-9b17-360a370a8ffe",
+      "userId": "seed-manufacturer-01",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "shipmentId": "4cbae245-b92a-42b1-8f4d-97b12e7c3f8f",
+      "message": "New shipment incoming from Global Pharma Logistics. Shipment #SHP-4002869 — 60 units of paracetamol (Dolo-650 mg).",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:24:04.891Z"
+    },
+    {
+      "id": "f6196b60-8774-4229-b1df-9109aeea79e3",
+      "userId": "seed-distributor-01",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "shipmentId": "4cbae245-b92a-42b1-8f4d-97b12e7c3f8f",
+      "message": "Shipment #SHP-4002869 created. Upload courier proof & OCG security sheet to confirm dispatch.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T21:24:04.891Z"
     }
   ],
   "restockOrders": []

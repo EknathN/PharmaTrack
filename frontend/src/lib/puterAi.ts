@@ -79,21 +79,27 @@ export function buildSystemPrompt(context: AiDashboardContext): string {
     2
   );
 
-  return `You are PharmaTrack AI, an intelligent, specialized pharmaceutical supply chain analyst assistant built directly into the PharmaTrack Pro platform.
-You are powered by Puter AI. You are assisting ${context.userName} (${context.role.toUpperCase()}).
+  return `You are PharmaTrack AI, the specialized pharmaceutical supply chain intelligence copilot built directly into PharmaTrack Pro.
+You are assisting ${context.userName} (${context.role.toUpperCase()}).
 
 CRITICAL INSTRUCTIONS & GUARDRAILS:
-1. STRICT DATA SCOPE: You must answer questions based ONLY on the user's live dashboard data provided below. If a user asks about anything unrelated to their dashboard, medicines, stock, inventory, sales, shipments, disposal, or pharmaceutical operations (e.g. general trivia, coding, recipes, sports), politely decline and say: "I am your dedicated PharmaTrack Supply Chain Assistant. I can only assist with analysis, sales summaries, stockout predictions, and reorder recommendations for your dashboard data."
-2. SALES & MOVEMENT ANALYSIS: When asked about sales or inventory movement, summarize the metrics clearly with bullet points, highlighting fast-moving vs slow-moving medicines.
-3. STOCKOUT PREDICTIONS: When asked about stockouts or running out of stock, explicitly name the drugs at risk, their current units, burn rate, and days left before depletion based on the data.
-4. DRUG REORDER RECOMMENDATIONS: When asked what to order, provide clear actionable recommendations with:
+1. STRICT DATA SCOPE: You must answer questions based ONLY on the user's live dashboard data provided below. If a user asks about anything unrelated to their dashboard, medicines, stock, inventory, sales, shipments, disposal, or pharmaceutical operations (e.g. general trivia, coding, recipes, sports), politely decline and say: "I am your dedicated PharmaTrack Supply Chain Copilot. I can only assist with analysis, sales summaries, stockout predictions, and reorder recommendations for your dashboard data."
+2. STRUCTURED & FORMATTED PRESENTATION:
+   - Structure every response cleanly with clear section headings using \`### Heading\`.
+   - When presenting multiple drugs, batches, or predictions, USE A CLEAN MARKDOWN TABLE (| Medicine | Stock | Burn Rate / Velocity | Depletion ETA | Status |).
+   - Use emoji status callouts for clarity: ⚠️ for critical/high risk, 💡 for reorder suggestions, 🔮 for forecasts, 📊 for metrics, ✅ for healthy items.
+   - Use concise, executive bullet points with **bold** highlights for quantities and medicine names.
+   - Include a dedicated "### 💡 Recommended Actions" section with concrete next steps.
+3. SALES & MOVEMENT ANALYSIS: When asked about sales or inventory movement, summarize the metrics with performance tables and bullet points highlighting high-velocity vs slow-moving medicines.
+4. STOCKOUT PREDICTIONS: When asked about stockouts or running out of stock, explicitly name the drugs at risk, their current units, burn rate, and days left before depletion based on the data.
+5. DRUG REORDER RECOMMENDATIONS: When asked what to order, provide clear actionable recommendations with:
    - Medicine Name & Batch
    - Current Quantity
    - Suggested Reorder Quantity
    - Urgency Level (Immediate / High / Moderate)
    - Supplier to order from (e.g. Distributor or Manufacturer)
-5. NEAR-EXPIRY RISK MITIGATION: Warn about any batches expiring within 30-60 days and recommend whether to prioritize sales (FEFO) or initiate return/disposal.
-6. TONE & FORMAT: Professional, concise, highly authoritative, and executive. Use clean markdown formatting, bold text for drug names and numbers, bullet points, and warning tags (⚠️, 🔮, 💡, 📊).
+6. NEAR-EXPIRY RISK MITIGATION: Warn about any batches expiring within 30-60 days and recommend whether to prioritize sales (FEFO) or initiate return/disposal.
+7. TONE: Professional, executive, and highly authoritative. Never mention external vendor names.
 
 LIVE DASHBOARD SNAPSHOT FOR THIS USER:
 \`\`\`json
@@ -154,26 +160,37 @@ function generateLocalAnalyticsResponse(query: string, context: AiDashboardConte
   // 1. Stockout / Out of stock questions
   if (q.includes("stock") || q.includes("sold out") || q.includes("run out") || q.includes("deplet") || q.includes("predict")) {
     if (context.stockoutPredictions.length === 0) {
-      return `### 🔮 Stockout Prediction Analysis\n\nAll current inventory lines are currently operating within safe operational buffer thresholds. No imminent stockouts detected in your ${context.role} portal.`;
+      return `### 🔮 Stockout Risk & Depletion Analysis
+
+✅ **All Inventory Lines Healthy**: All current active inventory buffers are operating above minimum safety thresholds. No imminent stockouts detected in your ${context.role.toUpperCase()} operations.`;
     }
 
     const critical = context.stockoutPredictions.filter(p => p.riskLevel === 'CRITICAL' || p.riskLevel === 'HIGH');
     const safe = context.stockoutPredictions.filter(p => p.riskLevel !== 'CRITICAL' && p.riskLevel !== 'HIGH');
 
-    let out = `### 🔮 Stockout Risk & Depletion Predictions\n\n`;
+    let out = `### 🔮 Stockout Risk & Depletion Forecast\n\n`;
+
     if (critical.length > 0) {
-      out += `⚠️ **High Risk Items (${critical.length} Medicines):**\n`;
+      out += `⚠️ **High Risk Items (${critical.length} Medicines Flagged):**\n\n`;
+      out += `| Medicine | Batch | Stock Left | Depletion ETA | Risk Level |\n`;
+      out += `| :--- | :--- | :--- | :--- | :--- |\n`;
       critical.forEach(c => {
-        out += `- **${c.medicineName}** (${c.batchNumber}): **${c.currentQuantity} units remaining** · *Risk: ${c.riskLevel}* · Depletion in: **${c.daysUntilStockout}**.\n  → *Recommendation*: ${c.recommendation}\n`;
+        out += `| **${c.medicineName}** | \`${c.batchNumber}\` | **${c.currentQuantity} units** | **${c.daysUntilStockout}** | \`${c.riskLevel}\` |\n`;
+      });
+      out += `\n### 💡 Immediate Action Required\n`;
+      critical.forEach(c => {
+        out += `→ **${c.medicineName}**: ${c.recommendation}\n`;
       });
     } else {
-      out += `✅ No items are currently at critical stockout risk.\n\n`;
+      out += `✅ **Zero Critical Depletions**: None of your stocked catalog items have breached the critical stockout horizon.\n\n`;
     }
 
     if (safe.length > 0) {
-      out += `\n📦 **Adequate Stock Buffer (${safe.length} Medicines):**\n`;
-      safe.slice(0, 3).forEach(s => {
-        out += `- **${s.medicineName}**: ${s.currentQuantity} units in stock (${s.daysUntilStockout}).\n`;
+      out += `\n### 📦 Stable Buffer Stock (${safe.length} Items)\n\n`;
+      out += `| Medicine | Available Quantity | Depletion Horizon |\n`;
+      out += `| :--- | :--- | :--- |\n`;
+      safe.slice(0, 4).forEach(s => {
+        out += `| **${s.medicineName}** | ${s.currentQuantity} units | ${s.daysUntilStockout} |\n`;
       });
     }
     return out;
@@ -182,52 +199,70 @@ function generateLocalAnalyticsResponse(query: string, context: AiDashboardConte
   // 2. Reorder recommendations
   if (q.includes("reorder") || q.includes("order") || q.includes("recommend") || q.includes("buy") || q.includes("purchase")) {
     if (context.reorderRecommendations.length === 0) {
-      return `### 💡 Drug Reorder Recommendations\n\nYour current stock across all catalog lines is above minimum safety reorder thresholds. No emergency procurement orders are required today.`;
+      return `### 💡 Drug Procurement & Reorder Advisory
+
+✅ **Optimal Stock Posture**: Your catalog lines are adequately stocked above safety replenishment limits. No emergency reorders are required at this time.`;
     }
 
-    let out = `### 💡 Recommended Drug Procurement Orders\n\nBased on your live stock levels and consumption velocity, here is your prioritized reorder list:\n\n`;
-    context.reorderRecommendations.forEach((r, idx) => {
-      out += `${idx + 1}. **${r.medicineName}**\n`;
-      out += `   - **Current Stock**: ${r.currentQuantity} units remaining\n`;
-      out += `   - **Suggested Reorder**: **${r.suggestedOrderQuantity} units**\n`;
-      out += `   - **Urgency**: \`${r.urgency}\`\n`;
-      out += `   - **Source**: Order from ${r.supplierRole}\n`;
-      out += `   - **Rationale**: ${r.reason}\n\n`;
+    let out = `### 💡 Recommended Drug Procurement Orders\n\n`;
+    out += `Based on real-time consumption velocity and safety stock buffers, here is your prioritized procurement schedule:\n\n`;
+    out += `| Medicine | In Stock | Suggested Order | Urgency | Supplier |\n`;
+    out += `| :--- | :--- | :--- | :--- | :--- |\n`;
+    context.reorderRecommendations.forEach(r => {
+      out += `| **${r.medicineName}** | ${r.currentQuantity} units | **${r.suggestedOrderQuantity} units** | \`${r.urgency}\` | ${r.supplierRole} |\n`;
     });
+
+    out += `\n### 📋 Order Rationale & Logistics\n`;
+    context.reorderRecommendations.forEach((r, idx) => {
+      out += `${idx + 1}. **${r.medicineName}** (Suggested: **${r.suggestedOrderQuantity} units**)\n   - ${r.reason}\n`;
+    });
+
     return out;
   }
 
   // 3. Expiry analysis
   if (q.includes("expiry") || q.includes("expire") || q.includes("near") || q.includes("date")) {
     if (context.nearExpiryRisks.length === 0) {
-      return `### ⚠️ Expiry Risk Radar\n\n✅ Great news! None of the batches currently in your ${context.role} inventory are within the 60-day near-expiry threshold. All batches have healthy shelf-life buffers.`;
+      return `### ⚠️ Expiry Risk Audit
+
+✅ **All Batches Fresh & Valid**: No batches in your ${context.role.toUpperCase()} inventory are within the 60-day near-expiry window. Physical inventory satisfies shelf-life compliance standards.`;
     }
 
-    let out = `### ⚠️ Near-Expiry Risk Analysis (${context.nearExpiryRisks.length} Batches Flagged)\n\n`;
+    let out = `### ⚠️ Near-Expiry Risk Radar (${context.nearExpiryRisks.length} Batches Flagged)\n\n`;
+    out += `The following batches require immediate FEFO rotation or reverse-logistics dispatch:\n\n`;
+    out += `| Medicine | Batch No | Units at Risk | Expiry Date | Days Left |\n`;
+    out += `| :--- | :--- | :--- | :--- | :--- |\n`;
     context.nearExpiryRisks.forEach(e => {
-      out += `- **${e.medicineName}** (Batch: \`${e.batchNumber}\`)\n`;
-      out += `  - **Stock at Risk**: ${e.quantity} units\n`;
-      out += `  - **Days to Expiry**: **${e.daysToExpiry} days** (Exp: ${e.expiryDate})\n`;
-      out += `  - **Action**: ${e.suggestedAction}\n\n`;
+      out += `| **${e.medicineName}** | \`${e.batchNumber}\` | **${e.quantity} units** | ${e.expiryDate} | **${e.daysToExpiry} days** |\n`;
     });
+
+    out += `\n### 💡 Mandatory Mitigation Protocols\n`;
+    context.nearExpiryRisks.forEach(e => {
+      out += `→ **${e.medicineName}** (\`${e.batchNumber}\`): ${e.suggestedAction}\n`;
+    });
+
     return out;
   }
 
   // 4. Sales and movement summary
   if (q.includes("sale") || q.includes("summary") || q.includes("perform") || q.includes("overview") || q.includes("dashboard") || q.includes("data")) {
-    let out = `### 📊 Dashboard Operations & Velocity Summary\n\n`;
-    out += `**Role**: ${context.role.toUpperCase()} (${context.userName})\n\n`;
-    out += `**Live Status**:\n${context.summary}\n\n`;
-    out += `**Key Performance Indicators**:\n`;
+    let out = `### 📊 ${context.role.toUpperCase()} Operational Summary\n\n`;
+    out += `**Stakeholder**: **${context.userName}** | **Ledger Scope**: Authenticated ${context.role.toUpperCase()}\n\n`;
+    out += `💡 **Live Operations Status**:\n${context.summary}\n\n`;
+
+    out += `### 📈 Key Operational Indicators\n\n`;
+    out += `| Metric Indicator | Recorded Value | Status |\n`;
+    out += `| :--- | :--- | :--- |\n`;
     Object.entries(context.metrics).forEach(([k, v]) => {
       const label = k.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-      out += `- **${label}**: ${typeof v === 'number' ? v.toLocaleString() : v}\n`;
+      const valStr = typeof v === 'number' ? v.toLocaleString() : String(v);
+      out += `| ${label} | **${valStr}** | Active |\n`;
     });
 
     if (context.stockoutPredictions.length > 0) {
       const crit = context.stockoutPredictions.filter(p => p.riskLevel === 'CRITICAL' || p.riskLevel === 'HIGH');
       if (crit.length > 0) {
-        out += `\n⚠️ **Urgent Attention**: ${crit.length} medicine(s) are at critical low stock thresholds and require immediate reorder.`;
+        out += `\n⚠️ **Operational Alert**: **${crit.length} medicine(s)** have dipped below safe replenishment buffers. Consider issuing purchase orders.`;
       }
     }
 
@@ -235,10 +270,14 @@ function generateLocalAnalyticsResponse(query: string, context: AiDashboardConte
   }
 
   // General fallback
-  return `### 🤖 PharmaTrack AI Assistant (${context.role.toUpperCase()})\n\nI am analyzing your live dashboard data. Here is what I can help you with:\n\n` +
-    `- 📊 **Sales & Movement Summary**: Ask for an operational breakdown of your stock and deliveries.\n` +
-    `- 🔮 **Stockout Predictions**: Ask *"Which medicines are going to sell out first?"*\n` +
-    `- 💡 **Drug Reorder Recommendations**: Ask *"What medicines should I order from the supplier?"*\n` +
-    `- ⚠️ **Near-Expiry Risk Audit**: Ask *"Are any of my batches near expiry?"*\n\n` +
-    `*All insights are calculated exclusively from your authenticated dashboard records.*`;
+  return `### ✨ PharmaTrack AI Intelligence Copilot (${context.role.toUpperCase()})
+
+I am actively monitoring your authenticated live dashboard ledger. You can ask for:
+
+- 📊 **Sales & Movement Summary**: *"Summarize my sales, movement, and KPI performance."*
+- 🔮 **Stockout Predictions**: *"Which medicines are going to sell out first?"*
+- 💡 **Drug Reorder Recommendations**: *"What medicines should I reorder right now and in what quantities?"*
+- ⚠️ **Near-Expiry Risk Audit**: *"Are any batches approaching expiration?"*
+
+*All intelligence calculations are grounded strictly in your live database records.*`;
 }
