@@ -121,6 +121,24 @@ export interface Alert {
   createdAt: string;
 }
 
+export interface RestockOrder {
+  id: string;
+  orderNumber: string;
+  buyerId: string;
+  buyerRole: Role;
+  buyerName: string;
+  supplierId: string;
+  supplierRole: Role;
+  supplierName: string;
+  medicineName: string;
+  quantity: number;
+  priority: 'standard' | 'urgent';
+  notes?: string;
+  status: 'pending' | 'accepted' | 'shipped' | 'fulfilled' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface DatabaseSchema {
   users: User[];
   batches: Batch[];
@@ -129,6 +147,7 @@ export interface DatabaseSchema {
   sales: Sale[];
   disposalRecords: DisposalRecord[];
   alerts: Alert[];
+  restockOrders: RestockOrder[];
 }
 
 // Find real path of data.json regardless of where node was launched
@@ -207,7 +226,8 @@ function getEmptyDb(): DatabaseSchema {
     shipments: [],
     sales: [],
     disposalRecords: [],
-    alerts: []
+    alerts: [],
+    restockOrders: []
   };
 }
 
@@ -243,6 +263,7 @@ export async function readDb(): Promise<DatabaseSchema> {
           if (!Array.isArray(parsed.sales)) parsed.sales = [];
           if (!Array.isArray(parsed.disposalRecords)) parsed.disposalRecords = [];
           if (!Array.isArray(parsed.alerts)) parsed.alerts = [];
+          if (!Array.isArray(parsed.restockOrders)) parsed.restockOrders = [];
 
           for (const seedUser of SEED_USERS) {
             if (!parsed.users.some(u => u.email.toLowerCase() === seedUser.email.toLowerCase())) {

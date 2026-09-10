@@ -98,6 +98,49 @@ class Alert(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     message = Column(String)
-    type = Column(String) # "near_expiry", "shipment_received", "fraud_detected"
+    type = Column(String) # "near_expiry", "shipment_received", "fraud_detected", "smart_restock"
     is_read = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Sale(Base):
+    __tablename__ = "sales"
+    id = Column(Integer, primary_key=True, index=True)
+    retailer_id = Column(Integer, ForeignKey("users.id"), index=True)
+    batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
+    medicine_name = Column(String, index=True)
+    quantity = Column(Integer)
+    sold_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+class RestockAlert(Base):
+    __tablename__ = "restock_alerts"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    user_role = Column(Enum(RoleEnum))
+    medicine_name = Column(String, index=True)
+    batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
+    current_stock = Column(Integer)
+    daily_velocity = Column(Float)
+    days_left = Column(Float)
+    suggested_quantity = Column(Integer)
+    alert_type = Column(String) # "fast_moving_low_stock" or "frequent_stock_out"
+    status = Column(String, default="active") # "active", "restock_pending", "dismissed"
+    headline = Column(String)
+    message = Column(String)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class RestockOrder(Base):
+    __tablename__ = "restock_orders"
+    id = Column(Integer, primary_key=True, index=True)
+    order_number = Column(String, unique=True, index=True)
+    requester_id = Column(Integer, ForeignKey("users.id"), index=True)
+    requester_role = Column(Enum(RoleEnum))
+    supplier_id = Column(Integer, ForeignKey("users.id"), index=True)
+    supplier_role = Column(Enum(RoleEnum))
+    medicine_name = Column(String, index=True)
+    batch_id = Column(Integer, ForeignKey("batches.id"), nullable=True)
+    quantity = Column(Integer)
+    status = Column(String, default="pending") # "pending", "restock_pending", "fulfilled", "cancelled"
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())

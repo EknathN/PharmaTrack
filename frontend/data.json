@@ -52,6 +52,23 @@
   ],
   "batches": [
     {
+      "id": "batch-amox-500",
+      "batchNumber": "BN-202609-5555",
+      "medicineName": "Amoxicillin 500mg",
+      "medicineType": "capsule",
+      "mfgDate": "2026-08-01",
+      "expDate": "2028-08-01",
+      "totalQuantity": 200,
+      "unitDetails": "10 Capsules/ strip",
+      "qrCode": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
+      "qrData": "Manufacturer: Apex Pharmaceuticals Ltd\nMedicine: Amoxicillin 500mg\nBatch No: BN-202609-5555\nMfg Date: 01-08-2026\nExp Date: 01-08-2028\nStrips: 10 Capsules/ strip\nTotal Quantity: 200 units\nBatch ID: batch-amox-500",
+      "manufacturerId": "seed-manufacturer-01",
+      "manufacturerName": "Apex Pharmaceuticals Ltd",
+      "status": "in_stock",
+      "history": [],
+      "createdAt": "2026-08-01T10:00:00.000Z"
+    },
+    {
       "id": "ca35585e-a791-4652-b57a-feb717f64e13",
       "batchNumber": "BN-202609-6978",
       "medicineName": "paracetamol (Dolo-650 mg)",
@@ -206,7 +223,23 @@
       "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
       "ownerId": "seed-retailer-01",
       "ownerRole": "retailer",
-      "quantity": 100,
+      "quantity": 35,
+      "status": "in_stock"
+    },
+    {
+      "id": "inv-retailer-amox-01",
+      "batchId": "batch-amox-500",
+      "ownerId": "seed-retailer-01",
+      "ownerRole": "retailer",
+      "quantity": 0,
+      "status": "in_stock"
+    },
+    {
+      "id": "inv-distributor-dolo-01",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "ownerId": "seed-distributor-01",
+      "ownerRole": "distributor",
+      "quantity": 60,
       "status": "in_stock"
     },
     {
@@ -304,7 +337,108 @@
       "receiverProofUrl": "/uploads/1789050286695-3rphjjz.png"
     }
   ],
-  "sales": [],
+  "sales": [
+    {
+      "id": "sale-01",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-04T10:00:00.000Z"
+    },
+    {
+      "id": "sale-02",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-05T11:00:00.000Z"
+    },
+    {
+      "id": "sale-03",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-06T14:30:00.000Z"
+    },
+    {
+      "id": "sale-04",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-07T09:15:00.000Z"
+    },
+    {
+      "id": "sale-05",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-08T16:45:00.000Z"
+    },
+    {
+      "id": "sale-06",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-09T12:00:00.000Z"
+    },
+    {
+      "id": "sale-07",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "ca35585e-a791-4652-b57a-feb717f64e13",
+      "batchNumber": "BN-202609-6978",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 5,
+      "soldAt": "2026-09-10T08:30:00.000Z"
+    },
+    {
+      "id": "sale-08",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "batch-amox-500",
+      "batchNumber": "BN-202609-5555",
+      "medicineName": "Amoxicillin 500mg",
+      "quantity": 10,
+      "soldAt": "2026-09-05T10:00:00.000Z"
+    },
+    {
+      "id": "sale-09",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "batch-amox-500",
+      "batchNumber": "BN-202609-5555",
+      "medicineName": "Amoxicillin 500mg",
+      "quantity": 10,
+      "soldAt": "2026-09-07T12:00:00.000Z"
+    },
+    {
+      "id": "sale-10",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "batchId": "batch-amox-500",
+      "batchNumber": "BN-202609-5555",
+      "medicineName": "Amoxicillin 500mg",
+      "quantity": 10,
+      "soldAt": "2026-09-09T15:00:00.000Z"
+    }
+  ],
   "disposalRecords": [],
   "alerts": [
     {
@@ -543,5 +677,6 @@
       "isRead": false,
       "createdAt": "2026-09-10T14:24:50.879Z"
     }
-  ]
+  ],
+  "restockOrders": []
 }

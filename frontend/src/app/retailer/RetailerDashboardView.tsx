@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRetailerLanguage } from "@/context/RetailerLanguageContext";
 import RetailerStatusBadge from "@/components/RetailerStatusBadge";
+import SmartRestockWidget from "@/components/SmartRestockWidget";
 import { cancelReturnShipment } from "@/app/actions/shipments";
 
 interface RetailerDashboardViewProps {
@@ -12,6 +13,7 @@ interface RetailerDashboardViewProps {
   returnShipments: any[];
   nearExpiry: any[];
   totalUnits: number;
+  smartRestockRecommendations?: any[];
 }
 
 export default function RetailerDashboardView({
@@ -21,6 +23,7 @@ export default function RetailerDashboardView({
   returnShipments,
   nearExpiry,
   totalUnits,
+  smartRestockRecommendations = [],
 }: RetailerDashboardViewProps) {
   const { t } = useRetailerLanguage();
 
@@ -93,6 +96,9 @@ export default function RetailerDashboardView({
           </div>
         </div>
       )}
+
+      {/* Smart Restock Recommendations */}
+      <SmartRestockWidget recommendations={smartRestockRecommendations} role="retailer" />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

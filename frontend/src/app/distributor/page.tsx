@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getDistributorDashboard } from "@/app/actions/shipments";
+import { getSmartRestockRecommendations } from "@/app/actions/restock";
 import { redirect } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import SmartRestockWidget from "@/components/SmartRestockWidget";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,6 +14,9 @@ export default async function DistributorDashboard() {
 
   const { inventory, incomingShipments, outgoingShipments, alerts } = data;
   const pendingReceipts = incomingShipments.filter((s: any) => s.status !== 'received');
+
+  // Fetch predictive smart restock recommendations based on wholesale velocity
+  const smartRestockRecommendations = await getSmartRestockRecommendations(14);
 
   return (
     <div className="space-y-6">
@@ -29,6 +34,9 @@ export default async function DistributorDashboard() {
           <Link href="/distributor/shipments/new" className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-900 transition-colors">Ship to Retailer</Link>
         </div>
       </div>
+
+      {/* Smart Restock Recommendations */}
+      <SmartRestockWidget recommendations={smartRestockRecommendations} role="distributor" />
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

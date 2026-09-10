@@ -4,7 +4,7 @@ from .database import engine, Base
 from .core.config import settings
 
 # Routers & Services
-from .routers import auth, batches, shipments, disposal
+from .routers import auth, batches, shipments, disposal, analytics
 from .services.expiry_checker import start_scheduler
 
 # Create database tables (using Alembic in production, but this works for sqlite dev)
@@ -32,3 +32,4 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(batches.router, prefix="/api/batches", tags=["batches"])
 app.include_router(shipments.router, prefix="/api/shipments", tags=["shipments"])
 app.include_router(disposal.router, prefix="/api/disposal", tags=["disposal"])
+app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
