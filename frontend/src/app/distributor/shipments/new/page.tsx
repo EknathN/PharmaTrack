@@ -10,6 +10,10 @@ function DistributorShipContent() {
   const router = useRouter();
   const params = useSearchParams();
   const prefillBatchId = params.get('batchId');
+  const orderId = params.get('orderId');
+  const prefillToId = params.get('toId');
+  const prefillQty = params.get('qty');
+  const prefillMedicine = params.get('medicine');
   const returnTo = params.get('returnTo'); // 'manufacturer' when forwarding returns
   const isReturn = returnTo === 'manufacturer';
 
@@ -17,6 +21,7 @@ function DistributorShipContent() {
   const [data, setData] = useState<any>(null);
   const [selectedBatchId, setSelectedBatchId] = useState<string>(prefillBatchId || '');
   const [selectedManufacturerId, setSelectedManufacturerId] = useState<string>('');
+  const [selectedRetailerId, setSelectedRetailerId] = useState<string>(prefillToId || '');
   const [returnQty, setReturnQty] = useState<string>('');
   const [shipmentResult, setShipmentResult] = useState<any>(null);
   const [shipmentQr, setShipmentQr] = useState('');
@@ -32,9 +37,23 @@ function DistributorShipContent() {
       if (prefillBatchId && res?.inventory?.some((i: any) => i.batchId === prefillBatchId)) {
         batchIdToSelect = prefillBatchId;
         setSelectedBatchId(prefillBatchId);
+      } else if (prefillMedicine) {
+        const match = res?.inventory?.find((i: any) => i.batch?.medicineName?.toLowerCase() === prefillMedicine.toLowerCase() && i.quantity > 0) ||
+                      res?.inventory?.find((i: any) => i.batch?.medicineName?.toLowerCase() === prefillMedicine.toLowerCase());
+        if (match) {
+          batchIdToSelect = match.batchId;
+          setSelectedBatchId(match.batchId);
+        } else if (res?.inventory && res.inventory.length > 0 && !selectedBatchId) {
+          batchIdToSelect = res.inventory[0].batchId;
+          setSelectedBatchId(res.inventory[0].batchId);
+        }
       } else if (res?.inventory && res.inventory.length > 0 && !selectedBatchId) {
         batchIdToSelect = res.inventory[0].batchId;
         setSelectedBatchId(res.inventory[0].batchId);
+      }
+
+      if (prefillToId && res?.retailers?.some((r: any) => r.id === prefillToId)) {
+        setSelectedRetailerId(prefillToId);
       }
 
       if (batchIdToSelect) {
@@ -49,7 +68,7 @@ function DistributorShipContent() {
         }
       }
     });
-  }, [prefillBatchId]);
+  }, [prefillBatchId, prefillMedicine, prefillToId]);
 
   const selectedItem = data?.inventory?.find((i: any) => i.batchId === selectedBatchId);
   const selectedBatch = selectedItem?.batch;
@@ -84,6 +103,9 @@ function DistributorShipContent() {
     setIsSubmitting(true);
     setError('');
     fd.set('type', isReturn ? 'return' : 'forward');
+    if (orderId) {
+      fd.set('orderId', orderId);
+    }
     if (!fd.get('toId')) {
       setError(isReturn ? 'No manufacturer found to return to.' : 'Please select a retailer.');
       setIsSubmitting(false);
@@ -93,8 +115,8 @@ function DistributorShipContent() {
     setIsSubmitting(false);
     if (res.success) {
       setShipmentResult(res);
-      const fresh = await getDistributorDashboard();
-      const ship = fresh?.outgoingShipments.find((s: any) => s.id === res.shipmentId);
+      const db = await getDistributorDashboard();
+      const ship = db?.outgoingShipments?.find((s: any) => s.id === res.shipmentId);
       if (ship) setShipmentQr(ship.qrCode);
       setStep('proof');
     } else {
@@ -267,6 +289,18 @@ function DistributorShipContent() {
             {error}
           </div>
         )}
+        {orderId && (
+          <div className="mb-4 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base">📦</span>
+              <span>Fulfilling Purchase Order from Retailer. Dispatching this package will automatically mark the purchase order as dispatched.</span>
+            </div>
+            <span className="font-mono text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded font-bold">
+              Linked Order
+            </span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -321,6 +355,8 @@ function DistributorShipContent() {
               <select
                 required
                 name="toId"
+                value={selectedRetailerId}
+                onChange={(e) => setSelectedRetailerId(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white"
               >
                 <option value="">Choose retailer...</option>
@@ -372,6 +408,7 @@ function DistributorShipContent() {
                 type="number"
                 min="1"
                 max={selectedItem?.quantity || undefined}
+                defaultValue={prefillQty || ''}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none"
                 placeholder={`Available: ${selectedItem?.quantity || 0} units`}
               />

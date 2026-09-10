@@ -32,11 +32,27 @@ export default async function HostDashboardPage() {
   const frozenBatches = batches.filter(b => b.isFrozen);
   const flaggedBatches = batches.filter(b => b.isFlagged && !b.isFrozen);
 
+  // Count proofs
+  let totalProofCount = 0;
+  shipments.forEach(s => {
+    if (s.senderProofUrl) totalProofCount++;
+    if (s.senderOcgProofUrl) totalProofCount++;
+    if (s.receiverProofUrl) totalProofCount++;
+    if (s.receiverOcgProofUrl) totalProofCount++;
+  });
+  disposals.forEach(d => {
+    if (d.photoBeforeUrl) totalProofCount++;
+    if (d.photoAfterUrl) totalProofCount++;
+    if (d.videoUrl) totalProofCount++;
+    if (d.certificateUrl) totalProofCount++;
+  });
+
   // Recent activity / anomaly alerts
   const recentAlerts = [...alerts].reverse().slice(0, 6);
 
   return (
     <div className="space-y-6">
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -166,6 +182,47 @@ export default async function HostDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Proof & Media Anti-Fraud Surveillance Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-2xl p-6 text-white border border-indigo-900/50 shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-indigo-500/10 to-transparent pointer-events-none" />
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 relative z-10">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center shrink-0 text-indigo-400">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white tracking-tight">Anti-Fraud Proof & Media Surveillance Center</h2>
+                <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                  Live Audit Active
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                Surveillance inspection of all courier PODs, OCG gatepasses, and destruction media uploaded by Manufacturers, Distributors, Retailers, and Disposers. Automated cross-batch duplicate hash detection prevents forged QR receipts and re-used proofs.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 w-full md:w-auto shrink-0">
+            <div className="bg-slate-800/80 border border-slate-700/60 rounded-xl px-4 py-2 text-center">
+              <div className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Total Proofs</div>
+              <div className="text-xl font-bold font-mono text-white">{totalProofCount}</div>
+            </div>
+            <Link
+              href="/host/proofs"
+              className="flex-1 md:flex-initial px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center justify-center gap-2"
+            >
+              Open Proof Inspector
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+              </svg>
+            </Link>
+          </div>
+        </div>
+      </div>
+
 
       {/* Main Two Column Grid: Batches Surveillance Table + Live Alert Radar */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

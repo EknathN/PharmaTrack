@@ -133,8 +133,22 @@ export async function createShipment(data: FormData) {
     details: `${type === 'return' ? 'Return ' : ''}Shipment #${shipmentNumber}, Qty: ${quantity}. OCG Security Key: ${ocgVerificationCode}`
   });
 
-  createAlert(db, toId, `${type === 'return' ? 'Return shipment' : 'New shipment'} incoming from ${session.name}. Shipment #${shipmentNumber} — ${quantity} units of ${batch.medicineName}.`, 'info', batchId, shipmentId);
-  createAlert(db, session.sub, `Shipment #${shipmentNumber} created. Upload courier proof & OCG security sheet to confirm dispatch.`, 'info', batchId, shipmentId);
+  // If linked to an incoming purchase/procurement order, mark it shipped
+  const orderId = data.get('orderId') as string;
+  if (orderId && Array.isArray(db.restockOrders)) {
+    const order = db.restockOrders.find(o => o.id === orderId);
+    if (order) {
+      order.status = 'shipped';
+      order.updatedAt = now;
+      order.notes = `${order.notes ? order.notes + ' · ' : ''}Fulfilled via Shipment #${shipmentNumber}`;
+      createAlert(
+        db,
+        order.buyerId,
+        `📦 Purchase Order ${order.orderNumber} for ${order.quantity} units of ${order.medicineName} has been DISPATCHED by ${session.name} via Shipment #${shipmentNumber}.`,
+        'info'
+      );
+    }
+  }
 
   await writeDb(db);
   revalidateAllDashboards();
@@ -632,6 +646,12 @@ export async function checkExpiryAlerts() {
     }
   }
 
+  // Also run 7-day overdue shipment and order checks
+  const overdueChanged = await checkOverdueShipmentsAndOrders(db);
+  if (overdueChanged) {
+    hasChanges = true;
+  }
+
   if (hasChanges) {
     await writeDb(db);
   }
@@ -690,11 +710,148 @@ export async function getRetailerInventory() {
   });
 }
 
+// ─── CHECK 7-DAY OVERDUE SHIPMENTS & UNSHIPPED ORDERS ───
+export async function checkOverdueShipmentsAndOrders(db: any) {
+  const now = Date.now();
+  const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+  let hasChanges = false;
+
+  if (!Array.isArray(db.alerts)) {
+    db.alerts = [];
+  }
+
+  // 1. Check in_transit shipments (Forward & Return)
+  for (const s of db.shipments || []) {
+    if (s.status === 'in_transit') {
+      const elapsed = now - new Date(s.createdAt).getTime();
+      if (elapsed >= SEVEN_DAYS_MS) {
+        const daysInTransit = Math.floor(elapsed / (24 * 60 * 60 * 1000));
+        const batch = db.batches?.find((b: any) => b.id === s.batchId);
+        const medName = batch?.medicineName || 'medicine';
+
+        if (s.type === 'forward') {
+          // Alert Sender: ask to track/expedite
+          const senderAlertExists = db.alerts.some(
+            (a: any) => a.userId === s.fromId && a.shipmentId === s.id && a.message?.includes('Delivery Overdue')
+          );
+          if (!senderAlertExists) {
+            createAlert(
+              db,
+              s.fromId,
+              `🚨 Delivery Overdue (>7 Days): Shipment #${s.shipmentNumber} (${s.quantity} units of ${medName}) dispatched to ${s.toName} has been in transit for ${daysInTransit} days without delivery confirmation! Please track package with courier immediately.`,
+              'danger',
+              s.batchId,
+              s.id
+            );
+            hasChanges = true;
+          }
+
+          // Alert Receiver: notify of overdue inbound delivery
+          const receiverAlertExists = db.alerts.some(
+            (a: any) => a.userId === s.toId && a.shipmentId === s.id && a.message?.includes('Delayed Inbound Package')
+          );
+          if (!receiverAlertExists) {
+            createAlert(
+              db,
+              s.toId,
+              `⚠️ Delayed Inbound Package: Shipment #${s.shipmentNumber} from ${s.fromName} (${s.quantity} units) has been in transit for ${daysInTransit} days and has not arrived. Please check courier transit status or complete intake.`,
+              'warning',
+              s.batchId,
+              s.id
+            );
+            hasChanges = true;
+          }
+        } else if (s.type === 'return') {
+          // Return Overdue: Alert Return Sender
+          const senderAlertExists = db.alerts.some(
+            (a: any) => a.userId === s.fromId && a.shipmentId === s.id && a.message?.includes('Return Delivery Overdue')
+          );
+          if (!senderAlertExists) {
+            createAlert(
+              db,
+              s.fromId,
+              `🚨 Return Delivery Overdue (>7 Days): Return Consignment #${s.shipmentNumber} to ${s.toName} has been in transit for ${daysInTransit} days. Please verify courier delivery status.`,
+              'danger',
+              s.batchId,
+              s.id
+            );
+            hasChanges = true;
+          }
+
+          // Return Overdue: Alert Return Receiver (Distributor / Manufacturer)
+          const receiverAlertExists = db.alerts.some(
+            (a: any) => a.userId === s.toId && a.shipmentId === s.id && a.message?.includes('Overdue Return Consignment')
+          );
+          if (!receiverAlertExists) {
+            createAlert(
+              db,
+              s.toId,
+              `⚠️ Overdue Return Consignment (>7 Days): Return Shipment #${s.shipmentNumber} from ${s.fromName} (${s.quantity} units of ${medName}) has not been received after ${daysInTransit} days in transit. Review and intake consignment.`,
+              'warning',
+              s.batchId,
+              s.id
+            );
+            hasChanges = true;
+          }
+        }
+      }
+    }
+  }
+
+  // 2. Check pending purchase/procurement orders
+  if (Array.isArray(db.restockOrders)) {
+    for (const o of db.restockOrders) {
+      if (o.status === 'pending') {
+        const elapsed = now - new Date(o.createdAt).getTime();
+        if (elapsed >= SEVEN_DAYS_MS) {
+          const daysPending = Math.floor(elapsed / (24 * 60 * 60 * 1000));
+
+          // Alert Supplier: asks him to ship the package
+          const supplierAlertExists = db.alerts.some(
+            (a: any) => a.userId === o.supplierId && a.message?.includes(o.orderNumber) && a.message?.includes('not been shipped')
+          );
+          if (!supplierAlertExists) {
+            createAlert(
+              db,
+              o.supplierId,
+              `⚠️ Action Required: Purchase Order #${o.orderNumber} for ${o.quantity} units of ${o.medicineName} was placed by ${o.buyerName} ${daysPending} days ago and has NOT been shipped! Please dispatch the package immediately.`,
+              'danger'
+            );
+            hasChanges = true;
+          }
+
+          // Alert Buyer: notify of overdue order
+          const buyerAlertExists = db.alerts.some(
+            (a: any) => a.userId === o.buyerId && a.message?.includes(o.orderNumber) && a.message?.includes('Delayed Dispatch')
+          );
+          if (!buyerAlertExists) {
+            createAlert(
+              db,
+              o.buyerId,
+              `⚠️ Delayed Dispatch: Order #${o.orderNumber} placed ${daysPending} days ago with ${o.supplierName} has not yet been shipped. Inquire with supplier for fulfillment.`,
+              'warning'
+            );
+            hasChanges = true;
+          }
+        }
+      }
+    }
+  }
+
+  return hasChanges;
+}
+
 // ─── GET DISTRIBUTOR DATA ───
 export async function getDistributorDashboard() {
   const session = await getCurrentSession();
   if (!session || session.role !== 'distributor') return null;
   const db = await readDb();
+
+  // Run automated 7-day overdue checks
+  const hasChanges = await checkOverdueShipmentsAndOrders(db);
+  if (hasChanges) {
+    await writeDb(db);
+  }
 
   const inventory = db.inventory.filter(i => i.ownerId === session.sub);
   const incomingShipments = db.shipments.filter(s => s.toId === session.sub && s.status !== 'received');
@@ -707,7 +864,20 @@ export async function getDistributorDashboard() {
 
   const enrichedInventory = inventory.map(inv => ({ ...inv, batch: db.batches.find(b => b.id === inv.batchId) }));
 
-  return { inventory: enrichedInventory, incomingShipments: incomingShipments.map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) })), outgoingShipments: outgoingShipments.map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) })), alerts, retailers, manufacturers };
+  // Incoming purchase orders from retailers
+  const incomingOrders = (db.restockOrders || [])
+    .filter(o => o.supplierId === session.sub && o.status === 'pending')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return {
+    inventory: enrichedInventory,
+    incomingShipments: incomingShipments.map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) })),
+    outgoingShipments: outgoingShipments.map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) })),
+    alerts,
+    retailers,
+    manufacturers,
+    incomingOrders
+  };
 }
 
 // ─── GET DISPOSER DATA ───

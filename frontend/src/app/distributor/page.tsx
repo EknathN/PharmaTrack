@@ -12,7 +12,7 @@ export default async function DistributorDashboard() {
   const data = await getDistributorDashboard();
   if (!data) redirect('/login');
 
-  const { inventory, incomingShipments, outgoingShipments, alerts } = data;
+  const { inventory, incomingShipments, outgoingShipments, alerts, incomingOrders = [] } = data;
   const pendingReceipts = incomingShipments.filter((s: any) => s.status !== 'received');
 
   // Fetch predictive smart restock recommendations based on wholesale velocity
@@ -30,10 +30,51 @@ export default async function DistributorDashboard() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             Refresh
           </a>
-          <Link href="/distributor/receive" className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors">Receive Stock</Link>
-          <Link href="/distributor/shipments/new" className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-xl hover:bg-slate-900 transition-colors">Ship to Retailer</Link>
+          <Link href="/distributor/receive" className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors">Receive Stock</Link>
+          <Link href="/distributor/shipments/new" className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors">Ship to Retailer</Link>
         </div>
       </div>
+
+      {/* Incoming Purchase Orders from Retailers */}
+      {incomingOrders && incomingOrders.length > 0 && (
+        <div className="bg-emerald-50/90 border border-emerald-200 rounded-2xl p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-emerald-950 flex items-center gap-2 text-base">
+              <span className="text-xl">📦</span>
+              <span>Incoming Purchase Orders from Retailers ({incomingOrders.length})</span>
+            </h2>
+            <span className="text-xs font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-1 rounded-full border border-emerald-300">
+              Fulfillment Required
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {incomingOrders.map((o: any) => (
+              <div key={o.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-xl p-3.5 border border-emerald-200 gap-3 shadow-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-slate-900 text-sm">{o.orderNumber}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 uppercase">
+                      {o.priority} PRIORITY
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-1">
+                    Buyer: <strong className="text-slate-900">{o.buyerName}</strong> · Quantity: <strong className="text-emerald-700 font-mono text-sm">{o.quantity} units</strong> of <strong className="text-slate-900">{o.medicineName}</strong>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Placed: {new Date(o.createdAt).toLocaleString()} · {o.notes}
+                  </p>
+                </div>
+                <Link
+                  href={`/distributor/shipments/new?orderId=${o.id}&toId=${o.buyerId}&qty=${o.quantity}&medicine=${encodeURIComponent(o.medicineName)}`}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5"
+                >
+                  <span>Dispatch Shipment →</span>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Smart Restock Recommendations */}
       <SmartRestockWidget recommendations={smartRestockRecommendations} role="distributor" />

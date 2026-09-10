@@ -337,3 +337,41 @@ export async function getRestockOrdersForUser() {
   );
   return orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
+
+export async function getPendingOrdersForSupplier() {
+  const session = await getCurrentSession();
+  if (!session) return [];
+
+  const db = await readDb();
+  const orders = (db.restockOrders || []).filter(
+    o => o.supplierId === session.sub && o.status === 'pending'
+  );
+  return orders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function fulfillOrderWithShipment(orderId: string, shipmentNumber: string) {
+  const session = await getCurrentSession();
+  if (!session) return { error: 'Unauthorized' };
+
+  const db = await readDb();
+  const order = (db.restockOrders || []).find(o => o.id === orderId && o.supplierId === session.sub);
+  if (!order) return { error: 'Order not found.' };
+
+  order.status = 'shipped';
+  order.updatedAt = new Date().toISOString();
+  order.notes = `${order.notes ? order.notes + ' · ' : ''}Fulfilled via Shipment #${shipmentNumber}`;
+
+  createAlert(
+    db,
+    order.buyerId,
+    `📦 Purchase Order ${order.orderNumber} for ${order.quantity} units of ${order.medicineName} has been DISPATCHED by ${session.name} via Shipment #${shipmentNumber}.`,
+    'info'
+  );
+
+  await writeDb(db);
+  revalidatePath('/retailer');
+  revalidatePath('/distributor');
+  revalidatePath('/manufacturer');
+  return { success: true };
+}
+

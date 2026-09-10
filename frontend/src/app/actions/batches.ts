@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { generateBatchQrCode } from '@/lib/qrHelper';
+import { checkOverdueShipmentsAndOrders } from './shipments';
 
 export async function createBatch(data: FormData) {
   const session = await getCurrentSession();
@@ -119,6 +120,12 @@ export async function getManufacturerDashboard() {
   if (!session || session.role !== 'manufacturer') return null;
   const db = await readDb();
 
+  // Run automated 7-day overdue checks
+  const hasChanges = await checkOverdueShipmentsAndOrders(db);
+  if (hasChanges) {
+    await writeDb(db);
+  }
+
   const inventory = db.inventory.filter(i => i.ownerId === session.sub);
   const now = Date.now();
 
@@ -143,6 +150,11 @@ export async function getManufacturerDashboard() {
     .filter(s => s.toId === session.sub && s.status === 'in_transit' && s.type === 'return')
     .map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) }));
 
+  // Incoming procurement orders from distributors
+  const incomingOrders = (db.restockOrders || [])
+    .filter(o => o.supplierId === session.sub && o.status === 'pending')
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   const alerts = db.alerts.filter(a => a.userId === session.sub && !a.isRead)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
@@ -155,7 +167,23 @@ export async function getManufacturerDashboard() {
   const nearExpiry = batches.filter(b => b.isNearExpiry).length;
   const disposed = batches.filter(b => b.status === 'fully_disposed').length;
 
-  return { batches, inventory, shipments, incomingReturns, alerts, disposalRecords, stats: { totalStock, inTransit, nearExpiry, disposed, incomingReturnsCount: incomingReturns.length } };
+  return {
+    batches,
+    inventory,
+    shipments,
+    incomingReturns,
+    incomingOrders,
+    alerts,
+    disposalRecords,
+    stats: {
+      totalStock,
+      inTransit,
+      nearExpiry,
+      disposed,
+      incomingReturnsCount: incomingReturns.length,
+      incomingOrdersCount: incomingOrders.length
+    }
+  };
 }
 
 export async function getBatchDetail(batchId: string) {

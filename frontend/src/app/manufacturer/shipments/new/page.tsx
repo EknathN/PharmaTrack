@@ -11,6 +11,10 @@ function NewShipmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const prefillBatchId = searchParams.get('batchId');
+  const orderId = searchParams.get('orderId');
+  const prefillToId = searchParams.get('toId');
+  const prefillQty = searchParams.get('qty');
+  const prefillMedicine = searchParams.get('medicine');
 
   const [step, setStep] = useState<'form' | 'proof' | 'done'>('form');
   const [batches, setBatches] = useState<any[]>([]);
@@ -30,13 +34,18 @@ function NewShipmentContent() {
         setBatches(d.batches);
         if (prefillBatchId) {
           setSelectedBatchId(prefillBatchId);
+        } else if (prefillMedicine) {
+          const match = d.batches.find((b: any) => b.medicineName?.toLowerCase() === prefillMedicine.toLowerCase() && (b.availableQuantity ?? 0) > 0) ||
+                        d.batches.find((b: any) => b.medicineName?.toLowerCase() === prefillMedicine.toLowerCase());
+          if (match) setSelectedBatchId(match.id);
+          else if (d.batches.length > 0) setSelectedBatchId(d.batches[0].id);
         } else if (d.batches.length > 0) {
           setSelectedBatchId(d.batches[0].id);
         }
       }
     });
     getUsersByRole('distributor').then(setDistributors);
-  }, [prefillBatchId]);
+  }, [prefillBatchId, prefillMedicine]);
 
   // Filter batches based on shipment type:
   // - forward (to distributor): valid, unexpired stock
@@ -50,7 +59,7 @@ function NewShipmentContent() {
   });
 
   const selectedBatch = batches.find(b => b.id === selectedBatchId);
-  const availableQty = selectedBatch?.totalQuantity || 0;
+  const availableQty = selectedBatch?.availableQuantity ?? selectedBatch?.totalQuantity ?? 0;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -63,6 +72,9 @@ function NewShipmentContent() {
     setError('');
     const formData = new FormData(e.currentTarget);
     formData.set('type', shipmentType);
+    if (orderId) {
+      formData.set('orderId', orderId);
+    }
     const res = await createShipment(formData);
     setIsSubmitting(false);
     if (res.success) {
@@ -231,6 +243,18 @@ function NewShipmentContent() {
           </div>
         )}
 
+        {orderId && (
+          <div className="mb-4 p-3.5 bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-xl text-xs font-medium flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-base">📦</span>
+              <span>Fulfilling Procurement Order from Distributor. Dispatching this package will automatically mark the purchase order as dispatched.</span>
+            </div>
+            <span className="font-mono text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded font-bold">
+              Linked Order
+            </span>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -291,7 +315,7 @@ function NewShipmentContent() {
             <label className="block text-sm font-medium text-slate-700 mb-1">
               {shipmentType === 'disposal' ? 'Select Disposer' : 'Select Distributor'} <span className="text-red-500">*</span>
             </label>
-            <RecipientSelect type={shipmentType === 'disposal' ? 'disposer' : 'distributor'} />
+            <RecipientSelect type={shipmentType === 'disposal' ? 'disposer' : 'distributor'} defaultValue={prefillToId || undefined} />
           </div>
 
           <div>
@@ -303,6 +327,7 @@ function NewShipmentContent() {
               min="1"
               max={availableQty > 0 ? availableQty : undefined}
               disabled={availableQty === 0}
+              defaultValue={prefillQty || ''}
               placeholder={availableQty > 0 ? `Max: ${availableQty} units` : '0 units available'}
               className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none disabled:bg-slate-100 disabled:text-slate-400"
             />
@@ -310,7 +335,13 @@ function NewShipmentContent() {
 
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Notes (Optional)</label>
-            <textarea name="notes" rows={2} className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none" placeholder="Any notes for the recipient..." />
+            <textarea
+              name="notes"
+              rows={2}
+              defaultValue={orderId ? `Fulfilling procurement order for ${prefillQty || ''} units` : ''}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none"
+              placeholder="Any notes for the recipient..."
+            />
           </div>
 
           <div className="flex gap-3">
@@ -329,11 +360,27 @@ function NewShipmentContent() {
   );
 }
 
-function RecipientSelect({ type }: { type: string }) {
+function RecipientSelect({ type, defaultValue }: { type: string; defaultValue?: string }) {
   const [users, setUsers] = useState<any[]>([]);
-  useEffect(() => { getUsersByRole(type).then(setUsers); }, [type]);
+  const [selected, setSelected] = useState(defaultValue || '');
+
+  useEffect(() => {
+    getUsersByRole(type).then((list) => {
+      setUsers(list);
+      if (defaultValue && list.some(u => u.id === defaultValue)) {
+        setSelected(defaultValue);
+      }
+    });
+  }, [type, defaultValue]);
+
   return (
-    <select required name="toId" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white">
+    <select
+      required
+      name="toId"
+      value={selected}
+      onChange={(e) => setSelected(e.target.value)}
+      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none bg-white"
+    >
       <option value="">Choose recipient...</option>
       {users.map(u => <option key={u.id} value={u.id}>{u.name} ({u.email})</option>)}
     </select>

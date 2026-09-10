@@ -10,7 +10,7 @@ export default async function ManufacturerDashboard() {
   const data = await getManufacturerDashboard();
   if (!data) redirect('/login');
 
-  const { batches, stats, alerts, shipments, incomingReturns = [] } = data;
+  const { batches, stats, alerts, shipments, incomingReturns = [], incomingOrders = [] } = data;
 
   return (
     <div className="space-y-6">
@@ -35,6 +35,47 @@ export default async function ManufacturerDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Incoming Procurement Orders from Distributors */}
+      {incomingOrders && incomingOrders.length > 0 && (
+        <div className="bg-indigo-50/90 border border-indigo-200 rounded-2xl p-4 sm:p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-indigo-950 flex items-center gap-2 text-base">
+              <span className="text-xl">🏭</span>
+              <span>Incoming Procurement Orders from Distributors ({incomingOrders.length})</span>
+            </h2>
+            <span className="text-xs font-semibold text-indigo-800 bg-indigo-100 px-2.5 py-1 rounded-full border border-indigo-300">
+              Procurement Fulfillment
+            </span>
+          </div>
+          <div className="space-y-2.5">
+            {incomingOrders.map((o: any) => (
+              <div key={o.id} className="flex flex-col sm:flex-row sm:items-center justify-between bg-white rounded-xl p-3.5 border border-indigo-200 gap-3 shadow-xs">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-slate-900 text-sm">{o.orderNumber}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-100 text-amber-900 uppercase">
+                      {o.priority} PRIORITY
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-700 mt-1">
+                    Distributor: <strong className="text-slate-900">{o.buyerName}</strong> · Requesting: <strong className="text-indigo-700 font-mono text-sm">{o.quantity} units</strong> of <strong className="text-slate-900">{o.medicineName}</strong>
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Placed: {new Date(o.createdAt).toLocaleString()} · {o.notes}
+                  </p>
+                </div>
+                <Link
+                  href={`/manufacturer/shipments/new?orderId=${o.id}&toId=${o.buyerId}&qty=${o.quantity}&medicine=${encodeURIComponent(o.medicineName)}`}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors whitespace-nowrap self-start sm:self-auto flex items-center gap-1.5"
+                >
+                  <span>Fulfill & Dispatch →</span>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Action Required: Incoming Near-Expiry Returns Alert */}
       {incomingReturns.length > 0 && (
