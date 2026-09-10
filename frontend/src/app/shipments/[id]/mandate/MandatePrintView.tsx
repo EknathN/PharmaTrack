@@ -63,9 +63,12 @@ export default function MandatePrintView({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 hidden md:inline">
-            Suitable for A4, Letter & Thermal parcel labels
-          </span>
+          <Link
+            href={`/shipments/${shipment.id}/ocg`}
+            className="px-4 py-2.5 bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-xs"
+          >
+            <span>🛡️ View OCG Sheet</span>
+          </Link>
           <button
             onClick={handlePrint}
             className="px-5 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98]"

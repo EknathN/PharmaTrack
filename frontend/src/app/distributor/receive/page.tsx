@@ -19,6 +19,7 @@ function DistributorReceiveContent() {
   const [medicineQr, setMedicineQr] = useState('');
   const [quantity, setQuantity] = useState('');
   const [proofUrl, setProofUrl] = useState('');
+  const [ocgProofUrl, setOcgProofUrl] = useState('');
   const [error, setError] = useState('');
   const [result, setResult] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -52,8 +53,8 @@ function DistributorReceiveContent() {
   };
 
   const handleConfirm = async () => {
-    if (!shipmentQr || !medicineQr || !quantity || !proofUrl) {
-      setError('All fields are required: both QR codes, quantity, and signed courier proof photo.');
+    if (!shipmentQr || !medicineQr || !quantity || !proofUrl || !ocgProofUrl) {
+      setError('All fields are required: both QR codes, quantity, signed courier proof photo, and physical OCG sheet verification photo.');
       return;
     }
     setIsSubmitting(true);
@@ -63,6 +64,7 @@ function DistributorReceiveContent() {
     fd.set('medicineQr', medicineQr);
     fd.set('quantity', quantity);
     fd.set('proofUrl', proofUrl);
+    fd.set('ocgProofUrl', ocgProofUrl);
 
     try {
       const res = await confirmReceipt(fd);
@@ -116,6 +118,7 @@ function DistributorReceiveContent() {
               setMedicineQr('');
               setQuantity('');
               setProofUrl('');
+              setOcgProofUrl('');
               getIncomingShipments().then(list => setIncomingShipments(list.filter((s: any) => s.status === 'in_transit')));
             }}
             className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
@@ -268,16 +271,24 @@ function DistributorReceiveContent() {
         </div>
 
         <ProofUpload
-          label="Step 4: Upload Signed Courier Receipt Photo"
+          label="Step 4: Upload Signed Courier Receipt Photo (POD)"
           accept="image/*"
           required
           onUploaded={setProofUrl}
           hint="Upload a clear photo of the courier's signed proof of delivery document."
         />
 
+        <ProofUpload
+          label="Step 5: Upload Physical OCG Sheet Verification Photo (Anti-Tamper)"
+          accept="image/*"
+          required
+          onUploaded={setOcgProofUrl}
+          hint="Photograph the physical OCG Sheet on the consignment to verify cryptographic security alignment."
+        />
+
         <button
           onClick={handleConfirm}
-          disabled={isSubmitting || !shipmentQr || !medicineQr || !quantity || !proofUrl}
+          disabled={isSubmitting || !shipmentQr || !medicineQr || !quantity || !proofUrl || !ocgProofUrl}
           className="w-full py-3.5 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {isSubmitting ? (

@@ -77,7 +77,10 @@ export interface Shipment {
   qrData: string;
   status: ShipmentStatus;
   senderProofUrl?: string;
+  senderOcgProofUrl?: string;
   receiverProofUrl?: string;
+  receiverOcgProofUrl?: string;
+  ocgVerificationCode?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;

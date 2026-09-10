@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { extractBatchId, generateBatchQrCode } from '@/lib/qrHelper';
+import { generateOcgSecurityCode } from '@/lib/ocgHelper';
 
 function revalidateAllDashboards() {
   try {
@@ -38,11 +39,16 @@ export async function createShipment(data: FormData) {
   if (!batch) return { error: 'Batch not found.' };
 
   if (batch.isFrozen) {
-    return { error: `CRITICAL SAFETY HOLD: Batch ${batch.batchNumber} (${batch.medicineName}) has been FROZEN by the Regulatory Control Authority (${batch.freezeReason || 'Under Investigation'}). Dispatch and transit are strictly blocked.` };
+    return { error: `CRITICAL REGULATORY HOLD: Batch ${batch.batchNumber} (${batch.medicineName}) is FROZEN by the Regulatory Authority (${batch.freezeReason || 'Regulatory Hold'}). Shipments cannot be created.` };
+  }
+
+  const senderInv = db.inventory.find(i => i.batchId === batchId && i.ownerId === session.sub);
+  if (!senderInv || senderInv.quantity < quantity) {
+    return { error: `Insufficient inventory. You have ${senderInv?.quantity || 0} units available.` };
   }
 
   const toUser = db.users.find(u => u.id === toId);
-  if (!toUser) return { error: 'Recipient not found.' };
+  if (!toUser) return { error: 'Recipient user not found.' };
 
   if (type === 'disposal') {
     if (toUser.role !== 'disposer') {
@@ -61,17 +67,21 @@ export async function createShipment(data: FormData) {
     }
   }
 
-  // Check sender has enough inventory
-  const senderInv = db.inventory.find(i => i.batchId === batchId && i.ownerId === session.sub);
-  if (!senderInv || senderInv.quantity < quantity) {
-    return { error: `Insufficient quantity. Available: ${senderInv?.quantity || 0} units` };
-  }
-
   const shipmentId = crypto.randomUUID();
-  const shipmentNumber = `${type === 'disposal' ? 'DSP' : 'SHP'}-${Math.floor(Math.random() * 10000000)}`;
+  const shipmentNumber = `SHP-${Math.floor(1000000 + Math.random() * 9000000)}`;
   const qrData = `PHARMATRACK:SHIPMENT:${shipmentId}`;
   const qrCode = await QRCode.toDataURL(qrData, { width: 300, margin: 2 });
   const now = new Date().toISOString();
+
+  // Generate deterministic anti-tamper OCG Security Alignment Code
+  const ocgVerificationCode = generateOcgSecurityCode(
+    shipmentNumber,
+    batch.batchNumber || batch.id,
+    quantity,
+    session.sub,
+    toUser.id,
+    now
+  );
 
   const newShipment: Shipment = {
     id: shipmentId,
@@ -88,6 +98,7 @@ export async function createShipment(data: FormData) {
     qrCode,
     qrData,
     status: 'awaiting_proof',
+    ocgVerificationCode,
     notes,
     createdAt: now,
     updatedAt: now
@@ -111,30 +122,50 @@ export async function createShipment(data: FormData) {
     actorName: session.name,
     actorRole: session.role,
     event: `Shipment Created → ${toUser.name} (${toUser.role})`,
-    details: `Shipment #${shipmentNumber}, Qty: ${quantity}`
+    details: `Shipment #${shipmentNumber}, Qty: ${quantity}. OCG Security Key: ${ocgVerificationCode}`
   });
 
   createAlert(db, toId, `New shipment incoming from ${session.name}. Shipment #${shipmentNumber} — ${quantity} units of ${batch.medicineName}.`, 'info', batchId, shipmentId);
-  createAlert(db, session.sub, `Shipment #${shipmentNumber} created. Upload courier proof to confirm dispatch.`, 'info', batchId, shipmentId);
+  createAlert(db, session.sub, `Shipment #${shipmentNumber} created. Upload courier proof & OCG security sheet to confirm dispatch.`, 'info', batchId, shipmentId);
 
   await writeDb(db);
   revalidateAllDashboards();
   return { success: true, shipmentId, shipmentNumber };
 }
 
-// ─── UPLOAD SENDER PROOF (confirms dispatch) ───
-export async function uploadSenderProof(shipmentId: string, proofUrl: string) {
+// ─── UPLOAD SENDER PROOF (confirms dispatch with Courier POD + OCG Sheet Verification) ───
+export async function uploadSenderProof(shipmentId: string, proofUrl: string, ocgProofUrl?: string) {
   const session = await getCurrentSession();
   if (!session) return { error: 'Unauthorized' };
+
+  if (!proofUrl) {
+    return { error: 'Courier signed proof (POD) is required.' };
+  }
+  if (!ocgProofUrl) {
+    return { error: 'OCG Sheet photo verification is required to confirm physical order alignment and prevent QR forgery.' };
+  }
 
   const db = await readDb();
   const shipment = db.shipments.find(s => s.id === shipmentId && s.fromId === session.sub);
   if (!shipment) return { error: 'Shipment not found.' };
-  if (shipment.senderProofUrl) return { error: 'Proof already uploaded.' };
+  if (shipment.senderProofUrl && shipment.senderOcgProofUrl) return { error: 'Proof already uploaded.' };
 
   shipment.senderProofUrl = proofUrl;
+  shipment.senderOcgProofUrl = ocgProofUrl;
   shipment.status = 'in_transit';
   shipment.updatedAt = new Date().toISOString();
+
+  // If shipment had no OCG code previously, generate it now
+  if (!shipment.ocgVerificationCode) {
+    shipment.ocgVerificationCode = generateOcgSecurityCode(
+      shipment.shipmentNumber,
+      shipment.batchId,
+      shipment.quantity,
+      shipment.fromId,
+      shipment.toId,
+      shipment.createdAt
+    );
+  }
 
   const batch = db.batches.find(b => b.id === shipment.batchId);
   if (batch) {
@@ -144,11 +175,11 @@ export async function uploadSenderProof(shipmentId: string, proofUrl: string) {
       actorName: session.name,
       actorRole: session.role,
       event: 'Dispatch Confirmed — In Transit',
-      details: `Courier proof uploaded. Shipment #${shipment.shipmentNumber} now in transit to ${shipment.toName}.`
+      details: `Courier POD & OCG Sheet uploaded (OCG: ${shipment.ocgVerificationCode}). Order alignment verified. Shipment #${shipment.shipmentNumber} now in transit to ${shipment.toName}.`
     });
   }
 
-  createAlert(db, shipment.toId, `Shipment #${shipment.shipmentNumber} from ${session.name} is now in transit.`, 'warning', shipment.batchId, shipmentId);
+  createAlert(db, shipment.toId, `Shipment #${shipment.shipmentNumber} from ${session.name} is now in transit with verified OCG Gatepass.`, 'warning', shipment.batchId, shipmentId);
 
   await writeDb(db);
   revalidateAllDashboards();
@@ -165,9 +196,10 @@ export async function confirmReceipt(data: FormData) {
   const receivedQtyStr = data.get('quantity') as string;
   const receivedQty = parseInt(receivedQtyStr);
   const proofUrl = data.get('proofUrl') as string;
+  const ocgProofUrl = data.get('ocgProofUrl') as string;
 
-  if (!shipmentQrData || !medicineQrData || !receivedQty || !proofUrl) {
-    return { error: 'All fields required: Shipment QR, Medicine QR, quantity, and proof photo.' };
+  if (!shipmentQrData || !medicineQrData || !receivedQty || !proofUrl || !ocgProofUrl) {
+    return { error: 'All verification items required: Shipment QR, Medicine QR, quantity, Courier proof, and OCG Security Sheet photo.' };
   }
 
   const db = await readDb();
@@ -202,9 +234,10 @@ export async function confirmReceipt(data: FormData) {
     return { error: `Quantity mismatch! Expected ${shipment.quantity} units, you entered ${receivedQty}. Alert raised.` };
   }
 
-  // Mark received
+  // Mark received with dual verification proofs
   shipment.status = 'received';
   shipment.receiverProofUrl = proofUrl;
+  shipment.receiverOcgProofUrl = ocgProofUrl;
   shipment.updatedAt = new Date().toISOString();
 
   // Add to receiver inventory
@@ -381,6 +414,16 @@ export async function initiateReturn(data: FormData) {
   const qrCode = await QRCode.toDataURL(qrData, { width: 300, margin: 2 });
   const now = new Date().toISOString();
 
+  // Generate deterministic anti-tamper OCG Security Alignment Code
+  const ocgVerificationCode = generateOcgSecurityCode(
+    shipmentNumber,
+    batchId,
+    quantity,
+    session.sub,
+    toId,
+    now
+  );
+
   db.shipments.push({
     id: shipmentId,
     shipmentNumber,
@@ -396,6 +439,7 @@ export async function initiateReturn(data: FormData) {
     qrCode,
     qrData,
     status: 'awaiting_proof',
+    ocgVerificationCode,
     notes: 'Near-expiry return',
     createdAt: now,
     updatedAt: now

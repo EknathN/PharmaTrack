@@ -19,6 +19,7 @@ function DistributorShipContent() {
   const [shipmentResult, setShipmentResult] = useState<any>(null);
   const [shipmentQr, setShipmentQr] = useState('');
   const [proofUrl, setProofUrl] = useState('');
+  const [ocgProofUrl, setOcgProofUrl] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -33,20 +34,34 @@ function DistributorShipContent() {
     });
   }, [prefillBatchId]);
 
-  const selectedInv = data?.inventory.find((i: any) => i.batchId === selectedBatchId);
-  const selectedBatch = selectedInv?.batch;
+  const selectedItem = data?.inventory?.find((i: any) => i.batchId === selectedBatchId);
+  const selectedBatch = selectedItem?.batch;
+  const maxQty = selectedItem?.quantity || 0;
 
   // If returning to manufacturer, auto-fill manufacturer ID
   const defaultToId = isReturn ? selectedBatch?.manufacturerId : '';
 
-  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!selectedBatchId) {
+      setError('Please select a batch from your inventory.');
+      return;
+    }
+
+    const fd = new FormData(e.currentTarget);
+    const qty = parseInt(fd.get('quantity') as string);
+    if (!qty || qty <= 0 || qty > maxQty) {
+      setError(`Quantity must be between 1 and ${maxQty}.`);
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
-    const fd = new FormData(e.currentTarget);
     fd.set('type', isReturn ? 'return' : 'forward');
-    if (isReturn && defaultToId) {
-      fd.set('toId', defaultToId);
+    if (!fd.get('toId')) {
+      setError(isReturn ? 'No manufacturer found to return to.' : 'Please select a retailer.');
+      setIsSubmitting(false);
+      return;
     }
     const res = await createShipment(fd);
     setIsSubmitting(false);
@@ -62,12 +77,12 @@ function DistributorShipContent() {
   };
 
   const handleProof = async () => {
-    if (!proofUrl || !shipmentResult) {
-      setError('Please upload dispatch proof first.');
+    if (!proofUrl || !ocgProofUrl || !shipmentResult) {
+      setError('Please upload both the Courier Signed Receipt AND the physical OCG Security Sheet photo.');
       return;
     }
     setIsSubmitting(true);
-    const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl);
+    const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl, ocgProofUrl);
     setIsSubmitting(false);
     if (res.success) {
       setStep('done');
@@ -88,24 +103,32 @@ function DistributorShipContent() {
           {isReturn ? 'Return Dispatched to Manufacturer!' : 'Shipment In Transit!'}
         </h2>
         <p className="text-slate-600 mt-2">
-          Shipment #{shipmentResult?.shipmentNumber} is now marked as <strong>In Transit</strong>.
+          Shipment #{shipmentResult?.shipmentNumber} is verified with OCG Order Alignment and marked as <strong>In Transit</strong>.
         </p>
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
           <a
             href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-violet-600 text-white rounded-xl font-medium hover:bg-violet-700 shadow-sm transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
             Print Shipping Mandate
+          </a>
+          <a
+            href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-sm transition-colors text-sm"
+          >
+            <span>🛡️ Print OCG Sheet</span>
           </a>
           <button
             onClick={() => {
               router.refresh();
               window.location.href = isReturn ? '/distributor/returns' : '/distributor';
             }}
-            className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors"
+            className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors text-sm"
           >
             Back to {isReturn ? 'Returns' : 'Dashboard'}
           </button>
@@ -118,26 +141,38 @@ function DistributorShipContent() {
     return (
       <div className="max-w-xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Proof</h1>
-          <p className="text-slate-500 text-sm mt-1">Upload the courier signed receipt to confirm dispatch.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Verification Proofs</h1>
+          <p className="text-slate-500 text-sm mt-1">Upload both the courier receipt and physical OCG security sheet to prevent tampering.</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-          <div className="p-4 bg-violet-50 border border-violet-100 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-violet-900">Shipment #{shipmentResult?.shipmentNumber} Created ✓</p>
-              <p className="text-xs text-violet-700 mt-1">
-                Print shipping mandate & upload courier confirmation.
-              </p>
+          <div className="p-4 bg-violet-50 border border-violet-100 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-violet-900">Shipment #{shipmentResult?.shipmentNumber} Created ✓</p>
+                <p className="text-xs text-violet-700 mt-0.5">
+                  Print shipping documents and attach with the consignment.
+                </p>
+              </div>
             </div>
-            <a
-              href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-violet-200 text-violet-700 text-xs font-semibold rounded-lg hover:bg-violet-50 transition-colors shadow-sm"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              Print Mandate
-            </a>
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-violet-200/60">
+              <a
+                href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-violet-200 text-violet-700 text-xs font-semibold rounded-lg hover:bg-violet-50 transition-colors shadow-xs"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                Print Mandate
+              </a>
+              <a
+                href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
+              >
+                <span>🛡️ Print OCG Security Sheet</span>
+              </a>
+            </div>
           </div>
           {shipmentQr && (
             <div className="text-center">
@@ -152,19 +187,30 @@ function DistributorShipContent() {
               {error}
             </div>
           )}
+          {/* Proof 1: Courier POD */}
           <ProofUpload
-            label="Courier Signed Receipt Photo"
+            label="1. Courier Signed Receipt Photo"
             accept="image/*"
             required
             onUploaded={setProofUrl}
-            hint="Upload a clear photo of the courier delivery confirmation."
+            hint="Upload a clear photo of the courier delivery confirmation / consignment note."
           />
+
+          {/* Proof 2: OCG Sheet Photo */}
+          <ProofUpload
+            label="2. OCG Sheet Photo Verification (Anti-Tamper Order Alignment)"
+            accept="image/*"
+            required
+            onUploaded={setOcgProofUrl}
+            hint="Photograph the physical signed OCG Sheet alongside the parcel to lock cryptographic order alignment and prevent QR forgery."
+          />
+
           <button
             onClick={handleProof}
-            disabled={isSubmitting || !proofUrl}
-            className="w-full py-3.5 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 disabled:opacity-50 transition-colors"
+            disabled={isSubmitting || !proofUrl || !ocgProofUrl}
+            className="w-full py-3.5 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 disabled:opacity-50 transition-colors shadow-sm"
           >
-            {isSubmitting ? 'Confirming...' : 'Confirm Dispatch → Mark In Transit'}
+            {isSubmitting ? 'Confirming Dual-Proof...' : 'Confirm Dispatch → Mark In Transit'}
           </button>
         </div>
       </div>
@@ -195,7 +241,7 @@ function DistributorShipContent() {
             {error}
           </div>
         )}
-        <form onSubmit={handleCreate} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Select Batch from Inventory <span className="text-red-500">*</span>
@@ -274,12 +320,12 @@ function DistributorShipContent() {
                   readOnly
                   name="quantity"
                   type="number"
-                  value={selectedInv?.quantity || 0}
+                  value={selectedItem?.quantity || 0}
                   className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-900 font-semibold cursor-not-allowed outline-none select-none pl-10"
                 />
                 <span className="absolute left-3.5 top-3.5 text-slate-400">🔒</span>
                 <span className="absolute right-3.5 top-3.5 text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md font-mono font-medium">
-                  {selectedInv?.quantity || 0} units
+                  {selectedItem?.quantity || 0} units
                 </span>
               </div>
             ) : (
@@ -288,9 +334,9 @@ function DistributorShipContent() {
                 name="quantity"
                 type="number"
                 min="1"
-                max={selectedInv?.quantity || undefined}
+                max={selectedItem?.quantity || undefined}
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none"
-                placeholder={`Available: ${selectedInv?.quantity || 0} units`}
+                placeholder={`Available: ${selectedItem?.quantity || 0} units`}
               />
             )}
           </div>

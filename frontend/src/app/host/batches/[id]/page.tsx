@@ -372,38 +372,107 @@ export default async function HostBatchDetailPage({ params }: { params: { id: st
           ))}
         </div>
 
-        {/* Courier Proofs */}
+        {/* Courier Proofs & OCG Verification */}
         {shipments.length > 0 && (
           <div className="pt-4 border-t border-slate-100 space-y-3">
-            <h3 className="font-semibold text-slate-900 text-sm">Movement Proofs ({shipments.length})</h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-slate-900 text-sm">Consignment Proofs & OCG Verification ({shipments.length})</h3>
+              <span className="text-[11px] text-emerald-600 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 font-medium">
+                🛡️ Dual-Proof Anti-Tamper Secured
+              </span>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {shipments.map(s => (
-                <div key={s.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs space-y-2">
+                <div key={s.id} className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs space-y-3">
                   <div className="flex items-center justify-between font-mono">
                     <span className="font-bold text-blue-600">#{s.shipmentNumber}</span>
                     <span className="text-[10px] uppercase bg-white px-2 py-0.5 rounded border border-slate-200 text-slate-600">
                       {s.type} · {s.status}
                     </span>
                   </div>
-                  <div className="text-slate-600 text-[11px]">
+                  <div className="text-slate-600 text-[11px] space-y-0.5">
                     <div>From: <strong className="text-slate-900">{s.fromName}</strong></div>
                     <div>To: <strong className="text-slate-900">{s.toName}</strong></div>
                     <div>Qty: <strong className="text-slate-900 font-mono">{s.quantity} units</strong></div>
                   </div>
-                  {s.senderProofUrl && (
-                    <div>
-                      <span className="text-[10px] text-slate-400 block mb-1">Courier POD:</span>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.senderProofUrl} alt="POD" className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+
+                  {s.ocgVerificationCode && (
+                    <div className="bg-emerald-50/80 border border-emerald-200/80 rounded-lg p-2 text-[10px]">
+                      <div className="text-emerald-800 font-semibold flex items-center justify-between font-mono">
+                        <span>🛡️ OCG Code:</span>
+                        <span className="font-bold">{s.ocgVerificationCode}</span>
+                      </div>
+                      <div className="text-emerald-700 text-[9px] mt-0.5">Order alignment cryptographic token active</div>
                     </div>
                   )}
-                  {s.receiverProofUrl && (
-                    <div>
-                      <span className="text-[10px] text-slate-400 block mb-1">Receiver Proof:</span>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={s.receiverProofUrl} alt="Proof" className="w-full h-28 object-cover rounded-lg border border-slate-200" />
+
+                  <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                    <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide block">Dispatch Verification</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {s.senderProofUrl ? (
+                        <div>
+                          <span className="text-[9px] text-slate-500 block mb-1">Courier POD:</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={s.senderProofUrl} alt="POD" className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                        </div>
+                      ) : (
+                        <div className="h-20 bg-slate-100 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-[9px] text-slate-400">
+                          No POD
+                        </div>
+                      )}
+                      {s.senderOcgProofUrl ? (
+                        <div>
+                          <span className="text-[9px] text-emerald-700 font-medium block mb-1">OCG Sheet:</span>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={s.senderOcgProofUrl} alt="OCG Proof" className="w-full h-20 object-cover rounded-lg border border-emerald-300 shadow-xs" />
+                        </div>
+                      ) : (
+                        <div className="h-20 bg-slate-100 rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-[9px] text-slate-400">
+                          No OCG Photo
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {(s.receiverProofUrl || s.receiverOcgProofUrl) && (
+                    <div className="space-y-2 pt-1 border-t border-slate-200/60">
+                      <span className="text-[10px] font-semibold text-slate-700 uppercase tracking-wide block">Receipt Intake Verification</span>
+                      <div className="grid grid-cols-2 gap-2">
+                        {s.receiverProofUrl ? (
+                          <div>
+                            <span className="text-[9px] text-slate-500 block mb-1">Receiver Proof:</span>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={s.receiverProofUrl} alt="Receipt Proof" className="w-full h-20 object-cover rounded-lg border border-slate-200" />
+                          </div>
+                        ) : null}
+                        {s.receiverOcgProofUrl ? (
+                          <div>
+                            <span className="text-[9px] text-emerald-700 font-medium block mb-1">Receiver OCG:</span>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={s.receiverOcgProofUrl} alt="Receiver OCG" className="w-full h-20 object-cover rounded-lg border border-emerald-300 shadow-xs" />
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   )}
+
+                  <div className="pt-2 flex items-center gap-2 text-[10px]">
+                    <Link
+                      href={`/shipments/${s.id}/ocg`}
+                      target="_blank"
+                      className="text-emerald-700 font-medium hover:underline flex items-center gap-1"
+                    >
+                      🛡️ View OCG Sheet
+                    </Link>
+                    <span className="text-slate-300">·</span>
+                    <Link
+                      href={`/shipments/${s.id}/mandate`}
+                      target="_blank"
+                      className="text-blue-600 font-medium hover:underline flex items-center gap-1"
+                    >
+                      📄 Shipping Mandate
+                    </Link>
+                  </div>
                 </div>
               ))}
             </div>

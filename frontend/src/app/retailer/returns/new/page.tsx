@@ -19,6 +19,7 @@ function ReturnContent() {
   const [destinationType, setDestinationType] = useState<'supplier' | 'manufacturer'>('supplier');
   const [shipmentResult, setShipmentResult] = useState<any>(null);
   const [proofUrl, setProofUrl] = useState('');
+  const [ocgProofUrl, setOcgProofUrl] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,33 +46,55 @@ function ReturnContent() {
     : selectedInv?.manufacturer?.id || selectedInv?.supplier?.id || '';
 
   const recipientName = destinationType === 'supplier'
-    ? selectedInv?.supplier?.name || 'Distributor'
-    : selectedInv?.manufacturer?.name || 'Manufacturer';
+    ? selectedInv?.supplier?.name || selectedInv?.batch?.manufacturerName || 'Supplier'
+    : selectedInv?.manufacturer?.name || selectedInv?.supplier?.name || 'Manufacturer';
+
+  const recipientRole = destinationType === 'supplier'
+    ? selectedInv?.supplier?.role || 'distributor'
+    : 'manufacturer';
 
   const returnQuantity = selectedInv?.returnableQuantity ?? selectedInv?.boughtQuantity ?? 0;
 
-  const handleReturn = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInitiate = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!selectedBatchId || !recipientId || !returnQuantity) {
-      setError('Please select a batch with valid return details.');
+    if (!selectedBatchId) {
+      setError('Please select a batch to return.');
       return;
     }
+    if (!recipientId) {
+      setError('Could not identify the authorized recipient for this batch.');
+      return;
+    }
+
+    const availableQty = selectedInv?.quantity || 0;
+    const requestedQty = parseInt(returnQuantity.toString());
+
+    if (isNaN(requestedQty) || requestedQty <= 0) {
+      setError('Please enter a valid return quantity.');
+      return;
+    }
+    if (requestedQty > availableQty) {
+      setError(`Cannot return more than available stock (${availableQty} units).`);
+      return;
+    }
+
     setIsSubmitting(true);
     setError('');
 
-    const fd = new FormData();
-    fd.set('batchId', selectedBatchId);
-    fd.set('toId', recipientId);
-    fd.set('quantity', returnQuantity.toString());
-
     try {
+      const fd = new FormData();
+      fd.set('batchId', selectedBatchId);
+      fd.set('toId', recipientId);
+      fd.set('quantity', requestedQty.toString());
       const res = await initiateReturn(fd);
+
       setIsSubmitting(false);
+
       if (res.success) {
         setShipmentResult(res);
         setStep('proof');
       } else {
-        setError(res.error || 'Failed to initiate return.');
+        setError(res.error || 'Failed to initiate return shipment.');
       }
     } catch (err: any) {
       setIsSubmitting(false);
@@ -80,15 +103,15 @@ function ReturnContent() {
   };
 
   const handleProof = async () => {
-    if (!proofUrl || !shipmentResult) {
-      setError('Please upload the signed courier proof photo first.');
+    if (!proofUrl || !ocgProofUrl || !shipmentResult) {
+      setError('Please upload both the signed courier proof photo AND the physical OCG Security Sheet photo.');
       return;
     }
     setIsSubmitting(true);
     setError('');
 
     try {
-      const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl);
+      const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl, ocgProofUrl);
       setIsSubmitting(false);
       if (res.success) {
         setStep('done');
@@ -118,27 +141,35 @@ function ReturnContent() {
         <p className="text-slate-600 mt-2">
           Return Shipment <strong>#{shipmentResult?.shipmentNumber}</strong> for{' '}
           <strong className="text-amber-700 font-semibold">{returnQuantity} units</strong> of{' '}
-          <strong>{selectedInv?.batch?.medicineName}</strong> is now dispatched to{' '}
+          <strong>{selectedInv?.batch?.medicineName}</strong> is verified with OCG Order Alignment and dispatched to{' '}
           <strong>{recipientName}</strong>.
         </p>
         <p className="text-xs text-slate-400 mt-1">
           Stock has been removed from active inventory and both parties have been alerted.
         </p>
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
           <a
             href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-sm transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-sm transition-colors text-sm"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
             Print Shipping Mandate
           </a>
+          <a
+            href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-sm transition-colors text-sm"
+          >
+            <span>🛡️ Print OCG Sheet</span>
+          </a>
           <button
             onClick={navigateToDashboard}
-            className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors shadow-sm"
+            className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 transition-colors shadow-sm text-sm"
           >
-            {t('backToDashboardBtn', 'Back to Retailer Dashboard')} →
+            Back to Dashboard
           </button>
         </div>
       </div>
@@ -149,28 +180,40 @@ function ReturnContent() {
     return (
       <div className="max-w-xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Proof</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Verification Proofs</h1>
           <p className="text-slate-500 text-sm mt-1">
-            Hand the sealed return packages to the courier and upload the signed delivery receipt/POD to confirm dispatch.
+            Hand sealed return packages to the courier and upload both the signed POD receipt and the physical OCG Security Sheet.
           </p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between">
-            <div>
-              <p className="font-semibold text-amber-900">Return Shipment #{shipmentResult?.shipmentNumber} Created ✓</p>
-              <p className="text-xs text-amber-700 mt-1">
-                Returning <strong>{returnQuantity} units</strong> to <strong>{recipientName}</strong>.
-              </p>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-amber-900">Return Shipment #{shipmentResult?.shipmentNumber} Created ✓</p>
+                <p className="text-xs text-amber-700 mt-0.5">
+                  Returning <strong>{returnQuantity} units</strong> to <strong>{recipientName}</strong>.
+                </p>
+              </div>
             </div>
-            <a
-              href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg hover:bg-amber-100 transition-colors shadow-sm"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
-              Print Mandate
-            </a>
+            <div className="flex flex-wrap gap-2 pt-1 border-t border-amber-200/60">
+              <a
+                href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg hover:bg-amber-100 transition-colors shadow-xs"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                Print Mandate
+              </a>
+              <a
+                href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
+              >
+                <span>🛡️ Print OCG Security Sheet</span>
+              </a>
+            </div>
           </div>
           {error && (
             <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium flex items-center gap-2">
@@ -178,17 +221,29 @@ function ReturnContent() {
               <span>{error}</span>
             </div>
           )}
+
+          {/* Proof 1: Courier POD */}
           <ProofUpload
-            label="Signed Courier Receipt / POD Photo"
+            label="1. Signed Courier Receipt / POD Photo"
             accept="image/*"
             required
             onUploaded={setProofUrl}
             hint="Upload a clear photo of the signed courier docket or consignment note confirming pickup."
           />
+
+          {/* Proof 2: OCG Sheet Photo */}
+          <ProofUpload
+            label="2. OCG Sheet Photo Verification (Anti-Tamper Order Alignment)"
+            accept="image/*"
+            required
+            onUploaded={setOcgProofUrl}
+            hint="Photograph the physical signed OCG Sheet alongside the parcel to lock cryptographic order alignment and prevent QR forgery."
+          />
+
           <button
             onClick={handleProof}
-            disabled={isSubmitting || !proofUrl}
-            className="w-full py-3.5 bg-amber-600 text-white font-medium rounded-xl hover:bg-amber-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            disabled={isSubmitting || !proofUrl || !ocgProofUrl}
+            className="w-full py-3.5 bg-amber-600 text-white font-medium rounded-xl hover:bg-amber-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
           >
             {isSubmitting ? (
               <>
@@ -196,7 +251,7 @@ function ReturnContent() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>Confirming Return Dispatch...</span>
+                <span>Confirming Dual-Proof...</span>
               </>
             ) : (
               'Confirm Return Dispatch → Mark In Transit'
@@ -239,7 +294,7 @@ function ReturnContent() {
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleReturn} className="space-y-6">
+          <form onSubmit={handleInitiate} className="space-y-6">
             {/* Batch Selector */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1.5">

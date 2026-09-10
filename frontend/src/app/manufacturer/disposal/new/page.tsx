@@ -18,6 +18,7 @@ function DisposalContent() {
   const [shipmentResult, setShipmentResult] = useState<any>(null);
   const [shipmentQr, setShipmentQr] = useState('');
   const [proofUrl, setProofUrl] = useState('');
+  const [ocgProofUrl, setOcgProofUrl] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,7 +46,7 @@ function DisposalContent() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedBatch) {
-      setError('Please select an expired or near-expiry batch.');
+      setError('Please select an eligible expired/returned batch.');
       return;
     }
     if (availableQty <= 0) {
@@ -67,38 +68,97 @@ function DisposalContent() {
   };
 
   const handleProof = async () => {
-    if (!proofUrl) { setError('Upload proof first.'); return; }
+    if (!proofUrl || !ocgProofUrl) { setError('Both Courier Proof and OCG Security Sheet photo are required.'); return; }
     setIsSubmitting(true);
-    const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl);
+    const res = await uploadSenderProof(shipmentResult.shipmentId, proofUrl, ocgProofUrl);
     setIsSubmitting(false);
     if (res.success) setStep('done');
     else setError(res.error || 'Failed.');
   };
 
   if (step === 'done') return (
-    <div className="max-w-xl mx-auto text-center py-16">
+    <div className="max-w-xl mx-auto text-center py-16 px-4">
       <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
         <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
       </div>
       <h2 className="text-2xl font-bold text-slate-900">Disposal Shipment In Transit</h2>
-      <p className="text-slate-500 mt-2">The Disposer has been notified. You will be able to see the disposal certificate once they complete the process.</p>
-      <button onClick={() => { router.refresh(); window.location.href = '/manufacturer'; }} className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">Back to Dashboard</button>
+      <p className="text-slate-500 mt-2">The Disposer has been notified with verified OCG Gatepass. You will be able to view the disposal certificate once completed.</p>
+      <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
+        <a
+          href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 shadow-sm transition-colors text-sm"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+          Print Shipping Mandate
+        </a>
+        <a
+          href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700 shadow-sm transition-colors text-sm"
+        >
+          <span>🛡️ Print OCG Sheet</span>
+        </a>
+        <button onClick={() => { router.refresh(); window.location.href = '/manufacturer'; }} className="px-5 py-3 bg-slate-100 text-slate-700 rounded-xl font-medium hover:bg-slate-200 text-sm">Back to Dashboard</button>
+      </div>
     </div>
   );
 
   if (step === 'proof') return (
     <div className="max-w-xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Proof</h1>
+      <h1 className="text-2xl font-bold text-slate-900">Upload Dispatch Verification Proofs</h1>
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 space-y-5">
-        <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl">
+        <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl space-y-3">
           <p className="font-semibold text-orange-900">Disposal Shipment #{shipmentResult?.shipmentNumber} Created ✓</p>
-          <p className="text-sm text-orange-700 mt-1">Upload the signed courier receipt to confirm dispatch to the Disposer.</p>
+          <p className="text-xs text-orange-700">Attach both the shipping documents and physical OCG security sheet with the consignment.</p>
+          <div className="flex flex-wrap gap-2 pt-1 border-t border-orange-200/60">
+            <a
+              href={`/shipments/${shipmentResult?.shipmentId}/mandate`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-orange-200 text-orange-700 text-xs font-semibold rounded-lg hover:bg-orange-50 transition-colors shadow-xs"
+            >
+              Print Mandate
+            </a>
+            <a
+              href={`/shipments/${shipmentResult?.shipmentId}/ocg`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-xs"
+            >
+              <span>🛡️ Print OCG Security Sheet</span>
+            </a>
+          </div>
         </div>
-        {shipmentQr && <div className="text-center"><img src={shipmentQr} alt="QR" className="w-36 h-36 mx-auto"/></div>}
+        {shipmentQr && <div className="text-center"><img src={shipmentQr} alt="QR" className="w-36 h-36 mx-auto border border-slate-200 rounded-lg p-1"/></div>}
         {error && <div className="p-3 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm">{error}</div>}
-        <ProofUpload label="Signed Courier Receipt" accept="image/*" required onUploaded={setProofUrl} />
-        <button onClick={handleProof} disabled={isSubmitting || !proofUrl} className="w-full py-3 bg-orange-600 text-white font-medium rounded-xl hover:bg-orange-700 disabled:opacity-50">
-          {isSubmitting ? 'Confirming...' : 'Confirm Dispatch to Disposer'}
+        
+        {/* Proof 1: Courier POD */}
+        <ProofUpload
+          label="1. Signed Courier Receipt / POD Photo"
+          accept="image/*"
+          required
+          onUploaded={setProofUrl}
+          hint="Upload a clear photo of the courier pickup receipt."
+        />
+
+        {/* Proof 2: OCG Sheet Photo */}
+        <ProofUpload
+          label="2. OCG Sheet Photo Verification (Anti-Tamper Order Alignment)"
+          accept="image/*"
+          required
+          onUploaded={setOcgProofUrl}
+          hint="Photograph the signed physical OCG Sheet alongside the disposal package to lock order alignment."
+        />
+
+        <button
+          onClick={handleProof}
+          disabled={isSubmitting || !proofUrl || !ocgProofUrl}
+          className="w-full py-3 bg-orange-600 text-white font-medium rounded-xl hover:bg-orange-700 disabled:opacity-50 shadow-sm"
+        >
+          {isSubmitting ? 'Confirming Dual-Proof...' : 'Confirm Dispatch to Disposer'}
         </button>
       </div>
     </div>
