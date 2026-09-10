@@ -14,7 +14,15 @@ export default async function DistributorReturnsPage() {
           <h1 className="text-2xl font-bold text-slate-900">Returns Management</h1>
           <p className="text-slate-500 text-sm">Handle near-expiry stock returned from retailers and forward to manufacturers.</p>
         </div>
-        <Link href="/distributor/receive" className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors">Receive Return</Link>
+        <div className="flex items-center gap-2">
+          <Link href="/distributor/shipments/new?returnTo=manufacturer" className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors shadow-sm flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
+            Return to Manufacturer
+          </Link>
+          <Link href="/distributor/receive" className="px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-xl hover:bg-amber-700 transition-colors">
+            Receive Return
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
@@ -62,8 +70,11 @@ export default async function DistributorReturnsPage() {
                         {s.status === 'received' && (
                           <Link href={`/distributor/shipments/new?batchId=${s.batchId}&returnTo=manufacturer`} className="text-xs text-violet-600 hover:underline font-medium">Forward to Mfr →</Link>
                         )}
-                        {s.status === 'in_transit' && s.toId !== s.fromId && (
+                        {s.status === 'in_transit' && s.toRole === 'distributor' && (
                           <Link href="/distributor/receive" className="text-xs text-amber-600 hover:underline font-medium">Receive →</Link>
+                        )}
+                        {s.status === 'in_transit' && s.fromRole === 'distributor' && (
+                          <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded">Dispatched to Mfr</span>
                         )}
                       </div>
                     </td>

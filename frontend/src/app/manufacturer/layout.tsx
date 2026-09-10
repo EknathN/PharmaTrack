@@ -8,6 +8,7 @@ const NAV = [
   { href: '/manufacturer/batches/new', label: 'Add New Batch', icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6' },
   { href: '/manufacturer/shipments/new', label: 'Ship Stock', icon: 'M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4' },
   { href: '/manufacturer/returns', label: 'Returns', icon: 'M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6' },
+  { href: '/manufacturer/receive', label: 'Receive Returns', icon: 'M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4' },
   { href: '/manufacturer/disposal/new', label: 'Send to Disposal', icon: 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16' },
 ];
 

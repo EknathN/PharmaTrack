@@ -139,6 +139,10 @@ export async function getManufacturerDashboard() {
   });
 
   const shipments = db.shipments.filter(s => s.fromId === session.sub || s.toId === session.sub);
+  const incomingReturns = db.shipments
+    .filter(s => s.toId === session.sub && s.status === 'in_transit' && s.type === 'return')
+    .map(s => ({ ...s, batch: db.batches.find(b => b.id === s.batchId) }));
+
   const alerts = db.alerts.filter(a => a.userId === session.sub && !a.isRead)
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 10);
@@ -151,7 +155,7 @@ export async function getManufacturerDashboard() {
   const nearExpiry = batches.filter(b => b.isNearExpiry).length;
   const disposed = batches.filter(b => b.status === 'fully_disposed').length;
 
-  return { batches, inventory, shipments, alerts, disposalRecords, stats: { totalStock, inTransit, nearExpiry, disposed } };
+  return { batches, inventory, shipments, incomingReturns, alerts, disposalRecords, stats: { totalStock, inTransit, nearExpiry, disposed, incomingReturnsCount: incomingReturns.length } };
 }
 
 export async function getBatchDetail(batchId: string) {

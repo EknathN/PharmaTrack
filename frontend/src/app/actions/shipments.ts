@@ -12,7 +12,10 @@ function revalidateAllDashboards() {
   try {
     revalidatePath('/retailer');
     revalidatePath('/distributor');
+    revalidatePath('/distributor/returns');
     revalidatePath('/manufacturer');
+    revalidatePath('/manufacturer/returns');
+    revalidatePath('/manufacturer/receive');
     revalidatePath('/disposer');
     revalidatePath('/', 'layout');
   } catch (e) {
@@ -68,7 +71,8 @@ export async function createShipment(data: FormData) {
   }
 
   const shipmentId = crypto.randomUUID();
-  const shipmentNumber = `SHP-${Math.floor(1000000 + Math.random() * 9000000)}`;
+  const prefix = type === 'return' ? 'RET-' : type === 'disposal' ? 'DSP-' : 'SHP-';
+  const shipmentNumber = `${prefix}${Math.floor(1000000 + Math.random() * 9000000)}`;
   const qrData = `PHARMATRACK:SHIPMENT:${shipmentId}`;
   const qrCode = await QRCode.toDataURL(qrData, { width: 300, margin: 2 });
   const now = new Date().toISOString();
@@ -114,6 +118,8 @@ export async function createShipment(data: FormData) {
 
   if (type === 'disposal') {
     batch.status = 'disposal_in_transit';
+  } else if (type === 'return') {
+    batch.status = 'return_in_transit';
   }
 
   batch.history.push({
@@ -121,11 +127,11 @@ export async function createShipment(data: FormData) {
     actorId: session.sub,
     actorName: session.name,
     actorRole: session.role,
-    event: `Shipment Created → ${toUser.name} (${toUser.role})`,
-    details: `Shipment #${shipmentNumber}, Qty: ${quantity}. OCG Security Key: ${ocgVerificationCode}`
+    event: type === 'return' ? `Return Shipment Created → ${toUser.name} (${toUser.role})` : `Shipment Created → ${toUser.name} (${toUser.role})`,
+    details: `${type === 'return' ? 'Return ' : ''}Shipment #${shipmentNumber}, Qty: ${quantity}. OCG Security Key: ${ocgVerificationCode}`
   });
 
-  createAlert(db, toId, `New shipment incoming from ${session.name}. Shipment #${shipmentNumber} — ${quantity} units of ${batch.medicineName}.`, 'info', batchId, shipmentId);
+  createAlert(db, toId, `${type === 'return' ? 'Return shipment' : 'New shipment'} incoming from ${session.name}. Shipment #${shipmentNumber} — ${quantity} units of ${batch.medicineName}.`, 'info', batchId, shipmentId);
   createAlert(db, session.sub, `Shipment #${shipmentNumber} created. Upload courier proof & OCG security sheet to confirm dispatch.`, 'info', batchId, shipmentId);
 
   await writeDb(db);

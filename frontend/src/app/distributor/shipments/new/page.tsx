@@ -16,6 +16,8 @@ function DistributorShipContent() {
   const [step, setStep] = useState<'form' | 'proof' | 'done'>('form');
   const [data, setData] = useState<any>(null);
   const [selectedBatchId, setSelectedBatchId] = useState<string>(prefillBatchId || '');
+  const [selectedManufacturerId, setSelectedManufacturerId] = useState<string>('');
+  const [returnQty, setReturnQty] = useState<string>('');
   const [shipmentResult, setShipmentResult] = useState<any>(null);
   const [shipmentQr, setShipmentQr] = useState('');
   const [proofUrl, setProofUrl] = useState('');
@@ -26,10 +28,25 @@ function DistributorShipContent() {
   useEffect(() => {
     getDistributorDashboard().then((res) => {
       setData(res);
+      let batchIdToSelect = selectedBatchId;
       if (prefillBatchId && res?.inventory?.some((i: any) => i.batchId === prefillBatchId)) {
+        batchIdToSelect = prefillBatchId;
         setSelectedBatchId(prefillBatchId);
       } else if (res?.inventory && res.inventory.length > 0 && !selectedBatchId) {
+        batchIdToSelect = res.inventory[0].batchId;
         setSelectedBatchId(res.inventory[0].batchId);
+      }
+
+      if (batchIdToSelect) {
+        const item = res?.inventory?.find((i: any) => i.batchId === batchIdToSelect);
+        if (item) {
+          setReturnQty(item.quantity.toString());
+          if (item.batch?.manufacturerId) {
+            setSelectedManufacturerId(item.batch.manufacturerId);
+          } else if (res?.manufacturers?.[0]?.id) {
+            setSelectedManufacturerId(res.manufacturers[0].id);
+          }
+        }
       }
     });
   }, [prefillBatchId]);
@@ -38,8 +55,17 @@ function DistributorShipContent() {
   const selectedBatch = selectedItem?.batch;
   const maxQty = selectedItem?.quantity || 0;
 
-  // If returning to manufacturer, auto-fill manufacturer ID
-  const defaultToId = isReturn ? selectedBatch?.manufacturerId : '';
+  // Sync manufacturer and quantity when selected batch changes
+  useEffect(() => {
+    if (selectedItem) {
+      setReturnQty(selectedItem.quantity.toString());
+      if (selectedBatch?.manufacturerId) {
+        setSelectedManufacturerId(selectedBatch.manufacturerId);
+      } else if (data?.manufacturers?.[0]?.id) {
+        setSelectedManufacturerId(data.manufacturers[0].id);
+      }
+    }
+  }, [selectedBatchId, selectedItem]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -263,23 +289,28 @@ function DistributorShipContent() {
           </div>
 
           {isReturn ? (
-            /* Auto-filled Manufacturer Recipient */
+            /* Manufacturer Recipient Dropdown with Auto-detection */
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Destination Manufacturer <span className="text-xs text-emerald-600 font-medium">✓ Auto-filled</span>
+                Destination Manufacturer <span className="text-xs text-emerald-600 font-medium">✓ Recipient Facility</span>
               </label>
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">
-                    {selectedBatch?.manufacturerName || 'Original Manufacturer'}
-                  </p>
-                  <p className="text-xs text-slate-500">Original manufacturer of this batch</p>
-                </div>
-                <span className="text-xs bg-violet-100 text-violet-800 px-2 py-0.5 rounded font-mono font-medium">
-                  Auto-locked
-                </span>
-              </div>
-              <input type="hidden" name="toId" value={defaultToId} />
+              <select
+                required
+                name="toId"
+                value={selectedManufacturerId}
+                onChange={(e) => setSelectedManufacturerId(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white font-medium text-slate-900"
+              >
+                <option value="">Select recipient manufacturer...</option>
+                {data?.manufacturers?.map((m: any) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} ({m.email}) {selectedBatch?.manufacturerId === m.id ? '— (Original Manufacturer)' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500 mt-1">
+                {selectedBatch?.manufacturerName ? `Original Manufacturer: ${selectedBatch.manufacturerName}` : 'Select the manufacturing facility authorized to receive and quarantine this return.'}
+              </p>
             </div>
           ) : (
             /* Regular Retailer Selector */
@@ -293,7 +324,7 @@ function DistributorShipContent() {
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none bg-white"
               >
                 <option value="">Choose retailer...</option>
-                {data?.retailers.map((r: any) => (
+                {data?.retailers?.map((r: any) => (
                   <option key={r.id} value={r.id}>
                     {r.name} ({r.email})
                   </option>
@@ -307,26 +338,32 @@ function DistributorShipContent() {
               <label className="block text-sm font-medium text-slate-700">
                 Quantity <span className="text-red-500">*</span>
               </label>
-              {isReturn && (
-                <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-                  🔒 Non-editable
+              {isReturn ? (
+                <span className="text-xs font-semibold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-200">
+                  Max returnable: {maxQty} units
                 </span>
-              )}
+              ) : null}
             </div>
             {isReturn ? (
               <div className="relative">
                 <input
                   required
-                  readOnly
                   name="quantity"
                   type="number"
-                  value={selectedItem?.quantity || 0}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-100 text-slate-900 font-semibold cursor-not-allowed outline-none select-none pl-10"
+                  min="1"
+                  max={maxQty}
+                  value={returnQty}
+                  onChange={(e) => setReturnQty(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 outline-none font-semibold text-slate-900 pr-24"
+                  placeholder={`Units to return (max ${maxQty})`}
                 />
-                <span className="absolute left-3.5 top-3.5 text-slate-400">🔒</span>
-                <span className="absolute right-3.5 top-3.5 text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md font-mono font-medium">
-                  {selectedItem?.quantity || 0} units
-                </span>
+                <button
+                  type="button"
+                  onClick={() => setReturnQty(maxQty.toString())}
+                  className="absolute right-2 top-2 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg transition-colors"
+                >
+                  All ({maxQty})
+                </button>
               </div>
             ) : (
               <input
@@ -351,7 +388,7 @@ function DistributorShipContent() {
             </button>
             <button
               type="submit"
-              disabled={isSubmitting || !selectedBatchId || (isReturn && !defaultToId)}
+              disabled={isSubmitting || !selectedBatchId || (isReturn ? !selectedManufacturerId : !data?.retailers?.length) || maxQty <= 0}
               className="flex-1 py-3.5 bg-violet-600 text-white font-medium rounded-xl hover:bg-violet-700 transition-colors disabled:opacity-50 shadow-sm"
             >
               {isSubmitting ? 'Creating...' : isReturn ? 'Initiate Return to Mfr →' : 'Create Shipment'}

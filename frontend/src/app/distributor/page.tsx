@@ -86,7 +86,10 @@ export default async function DistributorDashboard() {
                       <td className="px-5 py-3 font-semibold text-slate-900">{i.quantity}</td>
                       <td className="px-5 py-3"><StatusBadge status={i.status} /></td>
                       <td className="px-5 py-3">
-                        <Link href={`/distributor/shipments/new?batchId=${i.batchId}`} className="text-xs text-violet-600 hover:underline font-medium">Ship →</Link>
+                        <div className="flex items-center gap-2.5">
+                          <Link href={`/distributor/shipments/new?batchId=${i.batchId}`} className="text-xs text-violet-600 hover:underline font-medium">Ship →</Link>
+                          <Link href={`/distributor/shipments/new?batchId=${i.batchId}&returnTo=manufacturer`} className="text-xs text-amber-600 hover:underline font-medium">Return to Mfr →</Link>
+                        </div>
                       </td>
                     </tr>
                   ))}
