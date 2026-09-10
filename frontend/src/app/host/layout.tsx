@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSession, logoutUser } from "@/app/actions/auth";
+import AiDashboardChatbot from "@/components/AiDashboardChatbot";
 
 const NAV = [
   { href: '/host', label: 'Dashboard', icon: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' },
@@ -100,6 +101,7 @@ export default async function HostLayout({ children }: { children: React.ReactNo
       <main className="flex-1 container mx-auto p-4 md:p-6">
         {children}
       </main>
+      <AiDashboardChatbot />
     </div>
   );
 }

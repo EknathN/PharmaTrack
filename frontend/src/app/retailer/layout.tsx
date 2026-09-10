@@ -4,6 +4,7 @@ import { getCurrentSession, logoutUser } from "@/app/actions/auth";
 import { RetailerLanguageProvider } from "@/context/RetailerLanguageContext";
 import RetailerLanguageSelector from "@/components/RetailerLanguageSelector";
 import { RetailerDesktopNav, RetailerMobileNav, RetailerHeaderRole } from "@/components/RetailerNav";
+import AiDashboardChatbot from "@/components/AiDashboardChatbot";
 
 export default async function RetailerLayout({ children }: { children: React.ReactNode }) {
   const session = await getCurrentSession();
@@ -62,6 +63,7 @@ export default async function RetailerLayout({ children }: { children: React.Rea
         </header>
 
         <main className="flex-1 container mx-auto p-4 md:p-6">{children}</main>
+        <AiDashboardChatbot />
       </div>
     </RetailerLanguageProvider>
   );
