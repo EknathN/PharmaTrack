@@ -147,7 +147,7 @@ export default async function BatchDetailPage({ params }: { params: { id: string
 
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
               <Barcode
-                value={formatUnitBarcode(batch.batchNumber, 1)}
+                value={formatUnitBarcode(batch.batchNumber, 1, batch.mfgDate, batch.expDate)}
                 height={42}
                 moduleWidth={1.8}
                 showText={true}
@@ -155,7 +155,7 @@ export default async function BatchDetailPage({ params }: { params: { id: string
                 className="scale-95"
               />
               <span className="text-[10px] text-slate-400 font-mono mt-2">
-                Serial Range: {formatUnitBarcode(batch.batchNumber, 1)} ... {formatUnitBarcode(batch.batchNumber, Math.min(batch.totalQuantity || 10, 200))}
+                Serial Range: {formatUnitBarcode(batch.batchNumber, 1, batch.mfgDate, batch.expDate)} ... {formatUnitBarcode(batch.batchNumber, Math.min(batch.totalQuantity || 10, 200), batch.mfgDate, batch.expDate)}
               </span>
             </div>
           </div>

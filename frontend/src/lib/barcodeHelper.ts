@@ -105,13 +105,114 @@ export function generateCode128Svg(text: string, options: BarcodeSvgOptions = {}
 }
 
 /**
- * Formats a clean, standard unit barcode serial string.
- * Example: "BC-BN-202609-1803-0001"
+ * Formats a date string (YYYY-MM-DD or ISO) into compact 6-digit YYMMDD format.
+ * Example: "2026-09-10" -> "260910"
  */
-export function formatUnitBarcode(batchNumber: string, unitIndex: number): string {
+export function formatDateForBarcode(dateStr?: string): string {
+  if (!dateStr) return '000000';
+  const clean = dateStr.trim();
+  const parts = clean.split('-');
+  if (parts.length === 3) {
+    const yyyy = parts[0].trim();
+    const mm = parts[1].trim().padStart(2, '0');
+    const dd = parts[2].trim().slice(0, 2).padStart(2, '0');
+    const yy = yyyy.slice(-2);
+    return `${yy}${mm}${dd}`;
+  }
+  const digits = clean.replace(/[^0-9]/g, '');
+  return digits.length >= 6 ? digits.slice(-6) : digits.padStart(6, '0');
+}
+
+/**
+ * Formats an anti-tamper unit barcode serial string embedding both Manufacturing and Expiry dates.
+ * Format: BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
+ * Example: "BC-BN-202609-1803-M260910-E260912-0001"
+ */
+export function formatUnitBarcode(
+  batchNumber: string,
+  unitIndex: number,
+  mfgDate?: string,
+  expDate?: string
+): string {
   const cleanBatch = (batchNumber || 'BATCH').replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+  const mfg = formatDateForBarcode(mfgDate);
+  const exp = formatDateForBarcode(expDate);
   const serial = String(unitIndex).padStart(4, '0');
-  return `BC-${cleanBatch}-${serial}`;
+  return `BC-${cleanBatch}-M${mfg}-E${exp}-${serial}`;
+}
+
+export interface ParsedUnitBarcode {
+  isValid: boolean;
+  raw: string;
+  batchNumber?: string;
+  mfgDate?: string; // Standard YYYY-MM-DD
+  expDate?: string; // Standard YYYY-MM-DD
+  unitSerial?: string;
+  unitIndex?: number;
+}
+
+/**
+ * Parses an engraved unit barcode, extracting the batch number, embedded manufacturing date,
+ * expiry date, and unique unit serial.
+ */
+export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
+  if (!barcode) return { isValid: false, raw: '' };
+  const trimmed = barcode.trim().toUpperCase();
+
+  // Pattern 1: BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
+  const fullMatch = trimmed.match(/^BC-([A-Z0-9-]+)-M(\d{2})(\d{2})(\d{2})-E(\d{2})(\d{2})(\d{2})-(\d+)$/i);
+  if (fullMatch) {
+    const [, batchNumber, mYY, mMM, mDD, eYY, eMM, eDD, serial] = fullMatch;
+    return {
+      isValid: true,
+      raw: trimmed,
+      batchNumber,
+      mfgDate: `20${mYY}-${mMM}-${mDD}`,
+      expDate: `20${eYY}-${eMM}-${eDD}`,
+      unitSerial: serial,
+      unitIndex: parseInt(serial, 10),
+    };
+  }
+
+  // Pattern 2: Legacy or simplified BC-<BATCH>-<SERIAL>
+  const simpleMatch = trimmed.match(/^BC-([A-Z0-9-]+)-(\d+)$/i);
+  if (simpleMatch) {
+    return {
+      isValid: true,
+      raw: trimmed,
+      batchNumber: simpleMatch[1],
+      unitSerial: simpleMatch[2],
+      unitIndex: parseInt(simpleMatch[2], 10),
+    };
+  }
+
+  return { isValid: false, raw: trimmed };
+}
+
+/**
+ * Compares dates extracted from the master QR code with dates embedded in the engraved unit barcode.
+ * Detects tampering or label forgery immediately.
+ */
+export function compareQrAndBarcodeDates(
+  qrMfg?: string,
+  qrExp?: string,
+  bcMfg?: string,
+  bcExp?: string
+): { isMatch: boolean; mfgMatch: boolean; expMatch: boolean; notice: string } {
+  if (!bcMfg || !bcExp) {
+    return { isMatch: true, mfgMatch: true, expMatch: true, notice: 'Legacy barcode format (no embedded dates).' };
+  }
+
+  const norm = (d?: string) => (d || '').replace(/[^0-9]/g, '').slice(-6); // compare YYMMDD or MMDDYY
+  const mfgMatch = !qrMfg || norm(qrMfg) === norm(bcMfg) || qrMfg === bcMfg;
+  const expMatch = !qrExp || norm(qrExp) === norm(bcExp) || qrExp === bcExp;
+
+  const isMatch = mfgMatch && expMatch;
+  const notice = isMatch
+    ? '✓ Tamper-proof verification passed: QR and engraved barcode dates match.'
+    : '⚠️ TAMPER ALERT: Barcode engraved dates do not match printed carton QR dates!';
+
+  return { isMatch, mfgMatch, expMatch, notice };
 }
 
 /**
@@ -137,7 +238,7 @@ export function inferPackagingType(batch: Batch): string {
 
 /**
  * Resolves or auto-generates unit records for a batch in the database.
- * Ensures every unit has its unique serial barcode, packaging engraving, and lifecycle status.
+ * Ensures every unit has its unique serial barcode with embedded MFG and EXP dates.
  */
 export function getOrGenerateBatchUnits(db: DatabaseSchema, batch: Batch): UnitRecord[] {
   if (!Array.isArray(db.unitRecords)) {
@@ -155,7 +256,7 @@ export function getOrGenerateBatchUnits(db: DatabaseSchema, batch: Batch): UnitR
   const unitBarcodeList: string[] = [];
 
   for (let i = 1; i <= totalCount; i++) {
-    const unitBarcode = formatUnitBarcode(batch.batchNumber, i);
+    const unitBarcode = formatUnitBarcode(batch.batchNumber, i, batch.mfgDate, batch.expDate);
     unitBarcodeList.push(unitBarcode);
 
     const record: UnitRecord = {

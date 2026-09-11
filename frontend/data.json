@@ -264,9 +264,146 @@
           "actorRole": "retailer",
           "event": "Received by retailer — City Care Pharmacy",
           "details": "100 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-11T00:24:06.052Z",
+          "actorId": "seed-retailer-01",
+          "actorName": "City Care Pharmacy",
+          "actorRole": "retailer",
+          "event": "DISPENSED TO CUSTOMER (RETAIL BILLING)",
+          "details": "1 units (Medicine Strip) sold to fyyfcdcgfdghf by City Care Pharmacy. Invoice #INV-MTW7RAG4-340. Barcodes: BC-BN-202609-7019-M260910-E280911-0001."
         }
       ],
-      "createdAt": "2026-09-10T23:45:32.720Z"
+      "createdAt": "2026-09-10T23:45:32.720Z",
+      "packagingType": "Medicine Strip",
+      "unitBarcodes": [
+        "BC-BN-202609-7019-M260910-E280911-0001",
+        "BC-BN-202609-7019-M260910-E280911-0002",
+        "BC-BN-202609-7019-M260910-E280911-0003",
+        "BC-BN-202609-7019-M260910-E280911-0004",
+        "BC-BN-202609-7019-M260910-E280911-0005",
+        "BC-BN-202609-7019-M260910-E280911-0006",
+        "BC-BN-202609-7019-M260910-E280911-0007",
+        "BC-BN-202609-7019-M260910-E280911-0008",
+        "BC-BN-202609-7019-M260910-E280911-0009",
+        "BC-BN-202609-7019-M260910-E280911-0010",
+        "BC-BN-202609-7019-M260910-E280911-0011",
+        "BC-BN-202609-7019-M260910-E280911-0012",
+        "BC-BN-202609-7019-M260910-E280911-0013",
+        "BC-BN-202609-7019-M260910-E280911-0014",
+        "BC-BN-202609-7019-M260910-E280911-0015",
+        "BC-BN-202609-7019-M260910-E280911-0016",
+        "BC-BN-202609-7019-M260910-E280911-0017",
+        "BC-BN-202609-7019-M260910-E280911-0018",
+        "BC-BN-202609-7019-M260910-E280911-0019",
+        "BC-BN-202609-7019-M260910-E280911-0020",
+        "BC-BN-202609-7019-M260910-E280911-0021",
+        "BC-BN-202609-7019-M260910-E280911-0022",
+        "BC-BN-202609-7019-M260910-E280911-0023",
+        "BC-BN-202609-7019-M260910-E280911-0024",
+        "BC-BN-202609-7019-M260910-E280911-0025",
+        "BC-BN-202609-7019-M260910-E280911-0026",
+        "BC-BN-202609-7019-M260910-E280911-0027",
+        "BC-BN-202609-7019-M260910-E280911-0028",
+        "BC-BN-202609-7019-M260910-E280911-0029",
+        "BC-BN-202609-7019-M260910-E280911-0030",
+        "BC-BN-202609-7019-M260910-E280911-0031",
+        "BC-BN-202609-7019-M260910-E280911-0032",
+        "BC-BN-202609-7019-M260910-E280911-0033",
+        "BC-BN-202609-7019-M260910-E280911-0034",
+        "BC-BN-202609-7019-M260910-E280911-0035",
+        "BC-BN-202609-7019-M260910-E280911-0036",
+        "BC-BN-202609-7019-M260910-E280911-0037",
+        "BC-BN-202609-7019-M260910-E280911-0038",
+        "BC-BN-202609-7019-M260910-E280911-0039",
+        "BC-BN-202609-7019-M260910-E280911-0040",
+        "BC-BN-202609-7019-M260910-E280911-0041",
+        "BC-BN-202609-7019-M260910-E280911-0042",
+        "BC-BN-202609-7019-M260910-E280911-0043",
+        "BC-BN-202609-7019-M260910-E280911-0044",
+        "BC-BN-202609-7019-M260910-E280911-0045",
+        "BC-BN-202609-7019-M260910-E280911-0046",
+        "BC-BN-202609-7019-M260910-E280911-0047",
+        "BC-BN-202609-7019-M260910-E280911-0048",
+        "BC-BN-202609-7019-M260910-E280911-0049",
+        "BC-BN-202609-7019-M260910-E280911-0050",
+        "BC-BN-202609-7019-M260910-E280911-0051",
+        "BC-BN-202609-7019-M260910-E280911-0052",
+        "BC-BN-202609-7019-M260910-E280911-0053",
+        "BC-BN-202609-7019-M260910-E280911-0054",
+        "BC-BN-202609-7019-M260910-E280911-0055",
+        "BC-BN-202609-7019-M260910-E280911-0056",
+        "BC-BN-202609-7019-M260910-E280911-0057",
+        "BC-BN-202609-7019-M260910-E280911-0058",
+        "BC-BN-202609-7019-M260910-E280911-0059",
+        "BC-BN-202609-7019-M260910-E280911-0060",
+        "BC-BN-202609-7019-M260910-E280911-0061",
+        "BC-BN-202609-7019-M260910-E280911-0062",
+        "BC-BN-202609-7019-M260910-E280911-0063",
+        "BC-BN-202609-7019-M260910-E280911-0064",
+        "BC-BN-202609-7019-M260910-E280911-0065",
+        "BC-BN-202609-7019-M260910-E280911-0066",
+        "BC-BN-202609-7019-M260910-E280911-0067",
+        "BC-BN-202609-7019-M260910-E280911-0068",
+        "BC-BN-202609-7019-M260910-E280911-0069",
+        "BC-BN-202609-7019-M260910-E280911-0070",
+        "BC-BN-202609-7019-M260910-E280911-0071",
+        "BC-BN-202609-7019-M260910-E280911-0072",
+        "BC-BN-202609-7019-M260910-E280911-0073",
+        "BC-BN-202609-7019-M260910-E280911-0074",
+        "BC-BN-202609-7019-M260910-E280911-0075",
+        "BC-BN-202609-7019-M260910-E280911-0076",
+        "BC-BN-202609-7019-M260910-E280911-0077",
+        "BC-BN-202609-7019-M260910-E280911-0078",
+        "BC-BN-202609-7019-M260910-E280911-0079",
+        "BC-BN-202609-7019-M260910-E280911-0080",
+        "BC-BN-202609-7019-M260910-E280911-0081",
+        "BC-BN-202609-7019-M260910-E280911-0082",
+        "BC-BN-202609-7019-M260910-E280911-0083",
+        "BC-BN-202609-7019-M260910-E280911-0084",
+        "BC-BN-202609-7019-M260910-E280911-0085",
+        "BC-BN-202609-7019-M260910-E280911-0086",
+        "BC-BN-202609-7019-M260910-E280911-0087",
+        "BC-BN-202609-7019-M260910-E280911-0088",
+        "BC-BN-202609-7019-M260910-E280911-0089",
+        "BC-BN-202609-7019-M260910-E280911-0090",
+        "BC-BN-202609-7019-M260910-E280911-0091",
+        "BC-BN-202609-7019-M260910-E280911-0092",
+        "BC-BN-202609-7019-M260910-E280911-0093",
+        "BC-BN-202609-7019-M260910-E280911-0094",
+        "BC-BN-202609-7019-M260910-E280911-0095",
+        "BC-BN-202609-7019-M260910-E280911-0096",
+        "BC-BN-202609-7019-M260910-E280911-0097",
+        "BC-BN-202609-7019-M260910-E280911-0098",
+        "BC-BN-202609-7019-M260910-E280911-0099",
+        "BC-BN-202609-7019-M260910-E280911-0100"
+      ]
+    },
+    {
+      "id": "BAT-10654861",
+      "batchNumber": "BN-202609-7824",
+      "medicineName": "paracetamol (650 mg)",
+      "medicineType": "tablet",
+      "mfgDate": "2026-09-11",
+      "expDate": "2028-09-11",
+      "totalQuantity": 200,
+      "unitDetails": "30 Tablets/ strap",
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "Manufacturer: Apex Pharmaceuticals Ltd\nMedicine: paracetamol (650 mg)\nBatch No: BN-202609-7824\nMfg Date: 11-09-2026\nExp Date: 11-09-2028\nStrips: 30 Tablets/ strap\nTotal Quantity: 200 units\nBatch ID: BAT-10654861",
+      "manufacturerId": "seed-manufacturer-01",
+      "manufacturerName": "Apex Pharmaceuticals Ltd",
+      "status": "in_stock",
+      "history": [
+        {
+          "timestamp": "2026-09-11T00:25:58.093Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Batch Created",
+          "details": "200 units created. Batch locked permanently."
+        }
+      ],
+      "createdAt": "2026-09-11T00:25:58.093Z"
     }
   ],
   "inventory": [
@@ -275,7 +412,15 @@
       "batchId": "BAT-1744c2e8",
       "ownerId": "seed-retailer-01",
       "ownerRole": "retailer",
-      "quantity": 100,
+      "quantity": 99,
+      "status": "in_stock"
+    },
+    {
+      "id": "ade091a4-bfa9-4e71-91d9-13e7ecbfe685",
+      "batchId": "BAT-10654861",
+      "ownerId": "seed-manufacturer-01",
+      "ownerRole": "manufacturer",
+      "quantity": 200,
       "status": "in_stock"
     }
   ],
@@ -359,7 +504,55 @@
       "receiverOcgProofUrl": "/uploads/1789084302005-1v1yocf.png"
     }
   ],
-  "sales": [],
+  "sales": [
+    {
+      "id": "4a3a7dce-8806-410e-b2d0-85b81d868443",
+      "invoiceNumber": "INV-MTW7RAG4-340",
+      "retailerId": "seed-retailer-01",
+      "retailerName": "City Care Pharmacy",
+      "retailerShopName": "City Care Pharmacy",
+      "retailerAddress": "Shop 4 & 5, Sunshine Heights, SV Road, Andheri West",
+      "retailerCity": "Mumbai",
+      "retailerState": "Maharashtra",
+      "retailerPincode": "400058",
+      "retailerPhone": "+91-22-2620-8911",
+      "retailerLicense": "RET/MH/2020/43891",
+      "customerName": "fyyfcdcgfdghf",
+      "customerPhone": "9876543210",
+      "doctorName": "bvhcgfxdghv",
+      "paymentMode": "upi",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 1,
+      "unitPrice": 50,
+      "subtotal": 50,
+      "taxAmount": 2.5,
+      "discountAmount": 0,
+      "totalAmount": 52.5,
+      "items": [
+        {
+          "batchId": "BAT-1744c2e8",
+          "batchNumber": "BN-202609-7019",
+          "medicineName": "paracetamol (Dolo-650 mg)",
+          "packagingType": "Medicine Strip",
+          "scannedUnitBarcodes": [
+            "BC-BN-202609-7019-M260910-E280911-0001"
+          ],
+          "quantity": 1,
+          "unitPrice": 50,
+          "mrp": 65,
+          "taxRatePercent": 5,
+          "taxAmount": 2.5,
+          "lineTotal": 52.5
+        }
+      ],
+      "scannedUnitBarcodes": [
+        "BC-BN-202609-7019-M260910-E280911-0001"
+      ],
+      "soldAt": "2026-09-11T00:24:06.052Z"
+    }
+  ],
   "disposalRecords": [
     {
       "id": "66604ae6-72e1-4c6f-95f9-68894b3eaf1b",
@@ -567,6 +760,15 @@
       "type": "success",
       "isRead": false,
       "createdAt": "2026-09-11T00:05:17.743Z"
+    },
+    {
+      "id": "d5edcc7b-4ae9-49c7-93d5-f03b0d74edcd",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-10654861",
+      "message": "Batch BN-202609-7824 (paracetamol (650 mg)) created with 200 units. QR code generated.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-11T00:25:58.093Z"
     }
   ],
   "restockOrders": [
@@ -588,5 +790,912 @@
       "updatedAt": "2026-09-10T23:51:03.423Z"
     }
   ],
-  "rectificationRequests": []
+  "rectificationRequests": [],
+  "retailerPrices": {},
+  "unitRecords": [
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0001",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 1,
+      "packagingType": "Medicine Strip",
+      "status": "sold",
+      "soldAt": "2026-09-11T00:24:06.052Z",
+      "soldBy": "City Care Pharmacy",
+      "soldToCustomer": "fyyfcdcgfdghf",
+      "invoiceNumber": "INV-MTW7RAG4-340"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0002",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 2,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0003",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 3,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0004",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 4,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0005",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 5,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0006",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 6,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0007",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 7,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0008",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 8,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0009",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 9,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0010",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 10,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0011",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 11,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0012",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 12,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0013",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 13,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0014",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 14,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0015",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 15,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0016",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 16,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0017",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 17,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0018",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 18,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0019",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 19,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0020",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 20,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0021",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 21,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0022",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 22,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0023",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 23,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0024",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 24,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0025",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 25,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0026",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 26,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0027",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 27,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0028",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 28,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0029",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 29,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0030",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 30,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0031",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 31,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0032",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 32,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0033",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 33,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0034",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 34,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0035",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 35,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0036",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 36,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0037",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 37,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0038",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 38,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0039",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 39,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0040",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 40,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0041",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 41,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0042",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 42,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0043",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 43,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0044",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 44,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0045",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 45,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0046",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 46,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0047",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 47,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0048",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 48,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0049",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 49,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0050",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 50,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0051",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 51,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0052",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 52,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0053",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 53,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0054",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 54,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0055",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 55,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0056",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 56,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0057",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 57,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0058",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 58,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0059",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 59,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0060",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 60,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0061",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 61,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0062",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 62,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0063",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 63,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0064",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 64,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0065",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 65,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0066",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 66,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0067",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 67,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0068",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 68,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0069",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 69,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0070",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 70,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0071",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 71,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0072",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 72,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0073",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 73,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0074",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 74,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0075",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 75,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0076",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 76,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0077",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 77,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0078",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 78,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0079",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 79,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0080",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 80,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0081",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 81,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0082",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 82,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0083",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 83,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0084",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 84,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0085",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 85,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0086",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 86,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0087",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 87,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0088",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 88,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0089",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 89,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0090",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 90,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0091",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 91,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0092",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 92,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0093",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 93,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0094",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 94,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0095",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 95,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0096",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 96,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0097",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 97,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0098",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 98,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0099",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 99,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    },
+    {
+      "unitBarcode": "BC-BN-202609-7019-M260910-E280911-0100",
+      "batchId": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "unitIndex": 100,
+      "packagingType": "Medicine Strip",
+      "status": "in_stock"
+    }
+  ]
 }

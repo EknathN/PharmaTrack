@@ -2,7 +2,7 @@
 
 import { readDb } from '@/lib/db';
 import { extractBatchId, parseBatchQr } from '@/lib/qrHelper';
-import { extractUnitBarcode } from '@/lib/barcodeHelper';
+import { extractUnitBarcode, parseUnitBarcode, compareQrAndBarcodeDates } from '@/lib/barcodeHelper';
 import crypto from 'crypto';
 
 export interface CustodyEvent {
@@ -11,6 +11,15 @@ export interface CustodyEvent {
   actorRole: string;
   event: string;
   details?: string;
+}
+
+export interface DateTamperAlert {
+  isTampered: boolean;
+  message: string;
+  barcodeMfg?: string;
+  barcodeExp?: string;
+  batchMfg?: string;
+  batchExp?: string;
 }
 
 export interface VerificationResult {
@@ -69,6 +78,7 @@ export interface VerificationResult {
   };
   custodyEvents: CustodyEvent[];
   authenticityStatus: 'genuine' | 'near_expiry' | 'expired' | 'frozen' | 'disposed' | 'counterfeit';
+  dateTamperAlert?: DateTamperAlert;
   verificationHash: string;
   verifiedAt: string;
 }
@@ -160,16 +170,46 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
   const isDisposed = matchedBatch.status === 'fully_disposed' ||
     db.disposalRecords.some(d => d.batchId === matchedBatch.id && d.status === 'completed');
 
-  // 7. Authenticity status determination
+  // 7. Authenticity status determination & Date Anti-Fraud Validation
   let authenticityStatus: VerificationResult['authenticityStatus'] = 'genuine';
+  let dateTamperAlert: DateTamperAlert | undefined;
+
+  // Check if searched query or extracted unit barcode contains engraved dates
+  const parsedBc = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(query);
+  if (parsedBc.isValid && (parsedBc.mfgDate || parsedBc.expDate)) {
+    const check = compareQrAndBarcodeDates(matchedBatch.mfgDate, matchedBatch.expDate, parsedBc.mfgDate, parsedBc.expDate);
+    if (!check.isMatch) {
+      authenticityStatus = 'counterfeit'; // Fraud alert: date tampering detected!
+      dateTamperAlert = {
+        isTampered: true,
+        message: `🚨 FRAUD WARNING: Engraved barcode dates (MFG: ${parsedBc.mfgDate || 'N/A'}, EXP: ${parsedBc.expDate || 'N/A'}) DO NOT MATCH verified blockchain batch record (MFG: ${matchedBatch.mfgDate}, EXP: ${matchedBatch.expDate})! This package has likely been re-labeled or forged.`,
+        barcodeMfg: parsedBc.mfgDate,
+        barcodeExp: parsedBc.expDate,
+        batchMfg: matchedBatch.mfgDate,
+        batchExp: matchedBatch.expDate,
+      };
+    } else {
+      dateTamperAlert = {
+        isTampered: false,
+        message: `🛡️ Anti-Tamper Authenticated: Engraved barcode dates match batch blockchain record perfectly (MFG: ${parsedBc.mfgDate}, EXP: ${parsedBc.expDate}).`,
+        barcodeMfg: parsedBc.mfgDate,
+        barcodeExp: parsedBc.expDate,
+        batchMfg: matchedBatch.mfgDate,
+        batchExp: matchedBatch.expDate,
+      };
+    }
+  }
+
   if (matchedBatch.isFrozen) {
     authenticityStatus = 'frozen';
   } else if (isDisposed || matchedUnit?.status === 'disposed') {
     authenticityStatus = 'disposed';
-  } else if (isExpired) {
-    authenticityStatus = 'expired';
-  } else if (isNearExpiry) {
-    authenticityStatus = 'near_expiry';
+  } else if (authenticityStatus !== 'counterfeit') {
+    if (isExpired) {
+      authenticityStatus = 'expired';
+    } else if (isNearExpiry) {
+      authenticityStatus = 'near_expiry';
+    }
   }
 
   // 8. Compile complete chain of custody timeline
@@ -302,6 +342,7 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
       : undefined,
     custodyEvents,
     authenticityStatus,
+    dateTamperAlert,
     verificationHash,
     verifiedAt
   };

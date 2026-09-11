@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { finalizeDisposal, getDisposerDashboard } from "@/app/actions/shipments";
 import ProofUpload from "@/components/ProofUpload";
 import Link from "next/link";
+import QrScanner, { DualScanAllocation } from "@/components/QrScanner";
+import { parseUnitBarcode, compareQrAndBarcodeDates, formatUnitBarcode } from "@/lib/barcodeHelper";
 
 export default function DisposePage({ params }: { params: { id: string } }) {
   const router = useRouter();
@@ -22,6 +24,8 @@ export default function DisposePage({ params }: { params: { id: string } }) {
 
   const [scannedUnitBarcodes, setScannedUnitBarcodes] = useState<string[]>([]);
   const [barcodeInput, setBarcodeInput] = useState('');
+  const [showCameraScanner, setShowCameraScanner] = useState(false);
+  const [scanTamperNotice, setScanTamperNotice] = useState<{ isTampered: boolean; text: string } | null>(null);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -366,23 +370,90 @@ export default function DisposePage({ params }: { params: { id: string } }) {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                if (record?.batch?.batchNumber) {
-                  const qty = Math.min(record.quantity || record.shipment?.quantity || 10, 50);
-                  const list: string[] = [];
-                  for (let i = 1; i <= qty; i++) {
-                    list.push(`BC-${record.batch.batchNumber.replace(/[^A-Z0-9-]/gi, '')}-${String(i).padStart(4, '0')}`);
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowCameraScanner(!showCameraScanner)}
+                className="text-xs px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg font-semibold transition-colors shrink-0 flex items-center gap-1"
+              >
+                <span>📷</span>
+                <span>{showCameraScanner ? 'Hide Camera' : 'Camera Scanner'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (record?.batch?.batchNumber) {
+                    const qty = Math.min(record.quantity || record.shipment?.quantity || 10, 50);
+                    const list: string[] = [];
+                    for (let i = 1; i <= qty; i++) {
+                      list.push(formatUnitBarcode(record.batch.batchNumber, i, record.batch.mfgDate, record.batch.expDate));
+                    }
+                    setScannedUnitBarcodes(list);
                   }
-                  setScannedUnitBarcodes(list);
-                }
-              }}
-              className="text-xs px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg font-semibold transition-colors shrink-0"
-            >
-              ✓ Verify All Lot Units
-            </button>
+                }}
+                className="text-xs px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg font-semibold transition-colors shrink-0"
+              >
+                ✓ Verify All Lot Units
+              </button>
+            </div>
           </div>
+
+          {/* Camera Scanner Drawer */}
+          {showCameraScanner && (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+              <QrScanner
+                label="Scan Engraved Unit Barcode or Batch QR"
+                expectedBatchNumber={record?.batch?.batchNumber}
+                expectedMfgDate={record?.batch?.mfgDate}
+                expectedExpDate={record?.batch?.expDate}
+                onScanned={(val) => {
+                  const trimmed = val.trim();
+                  if (trimmed) {
+                    const parsed = parseUnitBarcode(trimmed);
+                    if (parsed.isValid && record?.batch) {
+                      const check = compareQrAndBarcodeDates(record.batch.mfgDate, record.batch.expDate, parsed.mfgDate, parsed.expDate);
+                      if (!check.isMatch) {
+                        setScanTamperNotice({ isTampered: true, text: `🚨 FRAUD/TAMPER WARNING: Engraved barcode dates (MFG: ${parsed.mfgDate || 'N/A'}, EXP: ${parsed.expDate || 'N/A'}) DO NOT MATCH batch manifest (MFG: ${record.batch.mfgDate}, EXP: ${record.batch.expDate})!` });
+                      } else {
+                        setScanTamperNotice({ isTampered: false, text: `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.` });
+                      }
+                    }
+                    if (!scannedUnitBarcodes.includes(trimmed)) {
+                      setScannedUnitBarcodes(prev => [...prev, trimmed]);
+                    }
+                  }
+                }}
+                onDualScanned={(alloc) => {
+                  const bc = alloc.unitBarcode || alloc.rawCode;
+                  if (bc && !scannedUnitBarcodes.includes(bc)) {
+                    setScannedUnitBarcodes(prev => [...prev, bc]);
+                  }
+                  if (alloc.isDateTampered) {
+                    setScanTamperNotice({ isTampered: true, text: alloc.tamperNotice || 'Date tampering detected.' });
+                  }
+                }}
+              />
+            </div>
+          )}
+
+          {/* Tamper Alert Display */}
+          {scanTamperNotice && (
+            <div className={`p-3 rounded-xl text-xs font-semibold flex items-center justify-between border ${
+              scanTamperNotice.isTampered
+                ? 'bg-rose-50 border-rose-200 text-rose-800'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            }`}>
+              <span>{scanTamperNotice.text}</span>
+              <button
+                type="button"
+                onClick={() => setScanTamperNotice(null)}
+                className="text-slate-400 hover:text-slate-600 ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Barcode Input Form */}
           <div className="flex items-center gap-2">
@@ -390,15 +461,26 @@ export default function DisposePage({ params }: { params: { id: string } }) {
               type="text"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
-              placeholder="Scan unit barcode on bottle/strip (e.g. BC-BN-202609-1803-0001)..."
+              placeholder="Scan unit barcode on bottle/strip (e.g. BC-BN...-M260910-E260912-0001)..."
               className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
             />
             <button
               type="button"
               onClick={() => {
                 const trimmed = barcodeInput.trim();
-                if (trimmed && !scannedUnitBarcodes.includes(trimmed)) {
-                  setScannedUnitBarcodes(prev => [...prev, trimmed]);
+                if (trimmed) {
+                  const parsed = parseUnitBarcode(trimmed);
+                  if (parsed.isValid && record?.batch) {
+                    const check = compareQrAndBarcodeDates(record.batch.mfgDate, record.batch.expDate, parsed.mfgDate, parsed.expDate);
+                    if (!check.isMatch) {
+                      setScanTamperNotice({ isTampered: true, text: `🚨 FRAUD/TAMPER WARNING: Engraved barcode dates (MFG: ${parsed.mfgDate || 'N/A'}, EXP: ${parsed.expDate || 'N/A'}) DO NOT MATCH batch manifest (MFG: ${record.batch.mfgDate}, EXP: ${record.batch.expDate})!` });
+                    } else {
+                      setScanTamperNotice({ isTampered: false, text: `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.` });
+                    }
+                  }
+                  if (!scannedUnitBarcodes.includes(trimmed)) {
+                    setScannedUnitBarcodes(prev => [...prev, trimmed]);
+                  }
                   setBarcodeInput('');
                 }
               }}

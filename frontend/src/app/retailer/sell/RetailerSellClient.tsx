@@ -5,9 +5,9 @@ import Link from "next/link";
 import { saveRetailerPrice, generateCustomerInvoice } from "@/app/actions/retailerPricing";
 import Barcode from "@/components/Barcode";
 import CustomerBillView from "@/components/CustomerBillView";
-import QrScanner from "@/components/QrScanner";
+import QrScanner, { DualScanAllocation } from "@/components/QrScanner";
 import { Sale } from "@/lib/db";
-import { extractUnitBarcode } from "@/lib/barcodeHelper";
+import { extractUnitBarcode, parseUnitBarcode, compareQrAndBarcodeDates } from "@/lib/barcodeHelper";
 
 interface InventoryItemWithPricing {
   inventoryId: string;
@@ -136,11 +136,76 @@ export default function RetailerSellClient({
       return;
     }
 
+    // Anti-Fraud check: if unit barcode contains embedded dates, verify against inventory record
+    const parsedBc = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(raw);
+    if (parsedBc.isValid && (parsedBc.mfgDate || parsedBc.expDate)) {
+      const dateCheck = compareQrAndBarcodeDates(matchedItem.mfgDate, matchedItem.expDate, parsedBc.mfgDate, parsedBc.expDate);
+      if (!dateCheck.isMatch) {
+        setPosError(`🚨 FRAUD / TAMPER ALERT: Unit barcode dates (MFG: ${parsedBc.mfgDate}, EXP: ${parsedBc.expDate}) do NOT match verified batch records (MFG: ${matchedItem.mfgDate}, EXP: ${matchedItem.expDate})! Sale rejected.`);
+        return;
+      }
+    }
+
     // Add to cart
     addItemToCart(matchedItem, unitBc || undefined);
     setBarcodeInput('');
     setPosSuccess(`Added 1 unit of ${matchedItem.medicineName} (${matchedItem.packagingType}).`);
     setTimeout(() => setPosSuccess(''), 3500);
+  };
+
+  // Simultaneous Dual Scan Handler (Batch QR + Unit Barcode)
+  const handleDualScanned = (allocation: DualScanAllocation) => {
+    setPosError('');
+    setPosSuccess('');
+
+    if (allocation.isDateTampered) {
+      setPosError(`🚨 FRAUD REJECTION: Barcode date tampering detected! ${allocation.tamperNotice}`);
+      return;
+    }
+
+    let matchedItem: InventoryItemWithPricing | undefined;
+
+    if (allocation.batchId) {
+      matchedItem = inventory.find(inv => inv.batchId === allocation.batchId);
+    }
+    if (!matchedItem && allocation.unitBarcode) {
+      matchedItem = inventory.find(inv => {
+        if (inv.sampleUnitBarcodes && inv.sampleUnitBarcodes.includes(allocation.unitBarcode!)) return true;
+        const cleanBatch = inv.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+        return allocation.unitBarcode!.toUpperCase().includes(cleanBatch);
+      });
+    }
+    if (!matchedItem && allocation.batchNumber) {
+      matchedItem = inventory.find(inv => inv.batchNumber.toLowerCase() === allocation.batchNumber!.toLowerCase());
+    }
+
+    if (!matchedItem) {
+      if (allocation.rawCode) {
+        handleProcessBarcode(allocation.rawCode);
+      } else {
+        setPosError('Scanned medicine details could not be matched with local inventory.');
+      }
+      return;
+    }
+
+    if (matchedItem.isFrozen) {
+      setPosError(`🚨 REGULATORY SAFETY HOLD: Batch ${matchedItem.batchNumber} (${matchedItem.medicineName}) is FROZEN by Regulatory Authority. Sales blocked.`);
+      return;
+    }
+
+    // Cross-verify dates
+    if (allocation.mfgDate && allocation.expDate) {
+      const dateCheck = compareQrAndBarcodeDates(matchedItem.mfgDate, matchedItem.expDate, allocation.mfgDate, allocation.expDate);
+      if (!dateCheck.isMatch) {
+        setPosError(`🚨 FRAUD ALERT: Scanned unit dates (MFG: ${allocation.mfgDate}, EXP: ${allocation.expDate}) do not match inventory record (MFG: ${matchedItem.mfgDate}, EXP: ${matchedItem.expDate})!`);
+        return;
+      }
+    }
+
+    addItemToCart(matchedItem, allocation.unitBarcode || undefined);
+    setBarcodeInput('');
+    setPosSuccess(`✓ Dual Verified & Allocated: ${matchedItem.medicineName} (${allocation.unitSerial ? `Unit #${allocation.unitSerial}` : matchedItem.packagingType}).`);
+    setTimeout(() => setPosSuccess(''), 4000);
   };
 
   const addItemToCart = (item: InventoryItemWithPricing, unitBarcode?: string) => {
@@ -409,9 +474,10 @@ export default function RetailerSellClient({
               {showScanner && (
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <QrScanner
-                    label="Align Unit Barcode or Batch QR inside camera viewfinder"
+                    label="Align Unit Barcode and/or Batch QR inside camera viewfinder"
                     onScanned={handleProcessBarcode}
-                    placeholder="Scanning live barcode..."
+                    onDualScanned={handleDualScanned}
+                    placeholder="Scanning live QR + Barcode..."
                   />
                 </div>
               )}

@@ -62,7 +62,7 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
     setIsCameraActive(false);
 
     try {
-      const { Html5Qrcode } = await import('html5-qrcode');
+      const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
 
       if (scannerRef.current) {
         try {
@@ -70,12 +70,21 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
         } catch (e) {}
       }
 
-      const scanner = new Html5Qrcode(scannerContainerId);
+      const scanner = new Html5Qrcode(scannerContainerId, {
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.UPC_A,
+        ],
+        verbose: false,
+      });
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: facing },
-        { fps: 15, qrbox: { width: 260, height: 260 } },
+        { fps: 15, qrbox: { width: 280, height: 260 } },
         (decodedText: string) => {
           stopCamera();
           handleVerify(decodedText);
@@ -522,6 +531,60 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
                 <p className="text-xs text-red-200/90 leading-relaxed pl-15">
                   No registered record was found for code <code className="bg-red-900/60 px-1.5 py-0.5 rounded font-mono">{result.searchedTerm}</code>. This product may be an unapproved or counterfeit formulation. Report this box to the Central Drug Regulatory Authority immediately.
                 </p>
+              </div>
+            )}
+
+            {/* Anti-Fraud Date Tamper Alert Banner */}
+            {result.dateTamperAlert && (
+              <div className={`p-5 rounded-3xl border-2 space-y-2 shadow-2xl ${
+                result.dateTamperAlert.isTampered
+                  ? 'bg-rose-950/95 border-rose-500 text-white animate-pulse'
+                  : 'bg-emerald-950/90 border-emerald-500 text-white'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-3xl shrink-0 ${
+                    result.dateTamperAlert.isTampered
+                      ? 'bg-rose-500/20 text-rose-400'
+                      : 'bg-emerald-500/20 text-emerald-400'
+                  }`}>
+                    {result.dateTamperAlert.isTampered ? '🚨' : '🛡️'}
+                  </div>
+                  <div>
+                    <div className={`text-xs font-mono font-bold uppercase tracking-widest ${
+                      result.dateTamperAlert.isTampered ? 'text-rose-400' : 'text-emerald-400'
+                    }`}>
+                      {result.dateTamperAlert.isTampered ? 'FRAUD ALERT · DATE TAMPERING DETECTED' : 'ANTI-TAMPER INTEGRITY VERIFIED'}
+                    </div>
+                    <h3 className="text-lg font-black text-white">
+                      {result.dateTamperAlert.isTampered ? 'Engraved Barcode Date Alteration Detected!' : 'Manufacturing & Expiry Dates Authenticated'}
+                    </h3>
+                  </div>
+                </div>
+                <p className="text-xs leading-relaxed pl-15 text-slate-200">
+                  {result.dateTamperAlert.message}
+                </p>
+                <div className="flex flex-wrap gap-2.5 pt-2 pl-15">
+                  {result.dateTamperAlert.barcodeMfg && (
+                    <span className="px-2.5 py-1 bg-black/40 rounded-lg text-xs font-mono border border-white/10">
+                      Barcode MFG: <strong className="text-white">{result.dateTamperAlert.barcodeMfg}</strong>
+                    </span>
+                  )}
+                  {result.dateTamperAlert.barcodeExp && (
+                    <span className="px-2.5 py-1 bg-black/40 rounded-lg text-xs font-mono border border-white/10">
+                      Barcode EXP: <strong className="text-white">{result.dateTamperAlert.barcodeExp}</strong>
+                    </span>
+                  )}
+                  {result.dateTamperAlert.batchMfg && (
+                    <span className="px-2.5 py-1 bg-black/40 rounded-lg text-xs font-mono border border-white/10">
+                      Ledger MFG: <strong className="text-white">{result.dateTamperAlert.batchMfg}</strong>
+                    </span>
+                  )}
+                  {result.dateTamperAlert.batchExp && (
+                    <span className="px-2.5 py-1 bg-black/40 rounded-lg text-xs font-mono border border-white/10">
+                      Ledger EXP: <strong className="text-white">{result.dateTamperAlert.batchExp}</strong>
+                    </span>
+                  )}
+                </div>
               </div>
             )}
 
