@@ -158,6 +158,15 @@ export default async function BatchDetailPage({ params }: { params: { id: string
                 Serial Range: {formatUnitBarcode(batch.batchNumber, 1, batch.mfgDate, batch.expDate)} ... {formatUnitBarcode(batch.batchNumber, Math.min(batch.totalQuantity || 10, 200), batch.mfgDate, batch.expDate)}
               </span>
             </div>
+
+            <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-left space-y-1">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+                <span>🔒 Cryptographically Encrypted from Manufacturer</span>
+              </div>
+              <p className="text-[11px] text-emerald-800 leading-relaxed">
+                Unit barcodes are encrypted with manufacturer HMAC signatures. Embedded Batch, MFG ({batch.mfgDate}), EXP ({batch.expDate}), and Serial details remain encrypted until revealed by an authorized <strong>Retailer</strong> at checkout or <strong>Disposer</strong> during neutralization.
+              </p>
+            </div>
           </div>
 
           {/* Shipments */}

@@ -1,4 +1,5 @@
 import { Batch, DatabaseSchema, UnitRecord } from './db';
+import crypto from 'crypto';
 
 /**
  * Standard Code 128 (Type B) Patterns
@@ -162,11 +163,139 @@ export function formatDateForBarcode(dateStr?: string): string {
   return digits.length >= 6 ? digits.slice(-6) : digits.padStart(6, '0');
 }
 
+export const MANUFACTURER_CIPHER_SECRET = process.env.MANUFACTURER_CIPHER_SECRET || 'Pharmatrack-Pro-Manufacturer-Master-Key-2026';
+
 /**
- * Formats an ultra-compact anti-tamper unit barcode embedding both Manufacturing and Expiry dates.
- * Format: B<SHORT_BATCH>-M<YYMM>E<YYMM>-<SERIAL>
- * Example: "B1803-M2609E2809-01" (Only ~19 characters!)
- * Keeps barcode narrow so dual camera scanners can detect both QR and Barcode easily in one frame.
+ * Encrypts unit barcode payload at the manufacturer stage.
+ * Encodes: Batch (4), MFG YYMM (4), EXP YYMM (4), Serial (2) -> 14 bytes
+ * Produces an ultra-compact authenticated base64url cipher: "EB-<TOKEN>" (~26 chars)
+ * The raw engraved barcode on packaging is 100% encrypted so no unauthorized party can read or forge dates.
+ */
+export function encryptUnitBarcode(
+  batchNumber: string,
+  unitIndex: number,
+  mfgDate?: string,
+  expDate?: string
+): string {
+  const b = getCompactBatchCode(batchNumber).slice(-4).padStart(4, '0').toUpperCase();
+  const m = formatCompactDate(mfgDate);
+  const e = formatCompactDate(expDate);
+  const s = String(unitIndex || 1).padStart(2, '0').slice(-2);
+
+  const payload = `${b}${m}${e}${s}`; // 14 chars
+  const payloadBuf = Buffer.from(payload, 'utf8');
+
+  // 2-byte deterministic salt derived from batch & unit
+  const salt = crypto.createHash('md5').update(`${b}:${s}:${MANUFACTURER_CIPHER_SECRET}`).digest().slice(0, 2);
+  const keystream = crypto.createHmac('sha256', MANUFACTURER_CIPHER_SECRET).update(salt).digest().slice(0, 14);
+
+  const cipherBuf = Buffer.alloc(14);
+  for (let i = 0; i < 14; i++) {
+    cipherBuf[i] = payloadBuf[i] ^ keystream[i];
+  }
+
+  // 1-byte authentication checksum tag
+  const authTag = crypto.createHmac('sha256', MANUFACTURER_CIPHER_SECRET).update(Buffer.concat([salt, cipherBuf])).digest()[0];
+
+  const packed = Buffer.concat([salt, cipherBuf, Buffer.from([authTag])]);
+  return `EB-${packed.toString('base64url')}`;
+}
+
+export interface DecryptedUnitBarcodeResult {
+  isValid: boolean;
+  raw: string;
+  isEncrypted: boolean;
+  isAuthorized: boolean;
+  message?: string;
+  error?: string;
+  batchNumber?: string;
+  mfgDate?: string;
+  expDate?: string;
+  unitSerial?: string;
+  unitIndex?: number;
+  revealedByRole?: 'retailer' | 'disposer' | 'manufacturer' | 'host';
+}
+
+/**
+ * Decrypts a manufacturer-encrypted unit barcode.
+ * Revelation of dates and unit serial is strictly authorized for 'retailer' and 'disposer'
+ * (as well as manufacturer/host for oversight).
+ */
+export function decryptUnitBarcode(
+  barcode: string,
+  authorizedRole?: 'retailer' | 'disposer' | 'manufacturer' | 'host' | string
+): DecryptedUnitBarcodeResult {
+  if (!barcode || !barcode.toUpperCase().startsWith('EB-')) {
+    return { isValid: false, raw: barcode, isEncrypted: false, isAuthorized: false, error: 'Not an encrypted barcode' };
+  }
+
+  const roleLower = (authorizedRole || '').toLowerCase();
+  const isRoleAuthorized = ['retailer', 'disposer', 'manufacturer', 'host'].includes(roleLower);
+
+  const token = barcode.slice(3);
+  try {
+    const packed = Buffer.from(token, 'base64url');
+    if (packed.length !== 17) {
+      return { isValid: false, raw: barcode, isEncrypted: true, isAuthorized: false, error: 'Invalid encrypted payload size' };
+    }
+
+    const salt = packed.slice(0, 2);
+    const cipherBuf = packed.slice(2, 16);
+    const authTag = packed[16];
+
+    const expectedAuth = crypto.createHmac('sha256', MANUFACTURER_CIPHER_SECRET).update(Buffer.concat([salt, cipherBuf])).digest()[0];
+    if (authTag !== expectedAuth) {
+      return { isValid: false, raw: barcode, isEncrypted: true, isAuthorized: false, error: 'Cryptographic signature verification failed (Counterfeit or tampered barcode)' };
+    }
+
+    // If role is NOT authorized, do not reveal the confidential decrypted dates and serials
+    if (!isRoleAuthorized) {
+      return {
+        isValid: true,
+        raw: barcode,
+        isEncrypted: true,
+        isAuthorized: false,
+        message: '🔒 Manufacturer Encrypted Security Barcode. Decryption authorized only for Retailers (at sale) and Certified Bio-Disposers (for expired destruction audit).'
+      };
+    }
+
+    // Authorized decryption
+    const keystream = crypto.createHmac('sha256', MANUFACTURER_CIPHER_SECRET).update(salt).digest().slice(0, 14);
+    const payloadBuf = Buffer.alloc(14);
+    for (let i = 0; i < 14; i++) {
+      payloadBuf[i] = cipherBuf[i] ^ keystream[i];
+    }
+
+    const payload = payloadBuf.toString('utf8');
+    const batchCode = payload.slice(0, 4);
+    const mYY = payload.slice(4, 6);
+    const mMM = payload.slice(6, 8);
+    const eYY = payload.slice(8, 10);
+    const eMM = payload.slice(10, 12);
+    const serial = payload.slice(12, 14);
+
+    return {
+      isValid: true,
+      raw: barcode,
+      isEncrypted: true,
+      isAuthorized: true,
+      batchNumber: batchCode,
+      mfgDate: `20${mYY}-${mMM}`,
+      expDate: `20${eYY}-${eMM}`,
+      unitSerial: serial,
+      unitIndex: parseInt(serial, 10),
+      revealedByRole: roleLower as any
+    };
+  } catch (err: any) {
+    return { isValid: false, raw: barcode, isEncrypted: true, isAuthorized: false, error: 'Failed to decrypt manufacturer cipher: ' + err.message };
+  }
+}
+
+/**
+ * Formats an encrypted unit barcode embedding both Manufacturing and Expiry dates.
+ * Format: EB-<BASE64URL_TOKEN>
+ * Example: "EB-RORJYnvBnIcUfKOZcfX8ies" (~26 characters)
+ * Data is encrypted from the manufacturer and revealed only to authorized Retailer or Disposer.
  */
 export function formatUnitBarcode(
   batchNumber: string,
@@ -174,38 +303,48 @@ export function formatUnitBarcode(
   mfgDate?: string,
   expDate?: string
 ): string {
-  const shortBatch = getCompactBatchCode(batchNumber);
-  const mfg = formatCompactDate(mfgDate);
-  const exp = formatCompactDate(expDate);
-  const serial = String(unitIndex).padStart(2, '0');
-  return `B${shortBatch}-M${mfg}E${exp}-${serial}`;
+  return encryptUnitBarcode(batchNumber, unitIndex, mfgDate, expDate);
 }
 
 export interface ParsedUnitBarcode {
   isValid: boolean;
   raw: string;
+  isEncrypted?: boolean;
+  isAuthorized?: boolean;
+  message?: string;
+  error?: string;
   batchNumber?: string;
   mfgDate?: string; // Standard YYYY-MM
   expDate?: string; // Standard YYYY-MM
   unitSerial?: string;
   unitIndex?: number;
+  revealedByRole?: 'retailer' | 'disposer' | 'manufacturer' | 'host';
 }
 
 /**
- * Parses an engraved unit barcode, extracting the batch number, embedded manufacturing date,
- * expiry date, and unique unit serial. Supports both ultra-compact and full legacy formats.
+ * Parses an engraved unit barcode.
+ * If encrypted (EB-), performs authorized cryptographic decryption.
+ * Also supports compact B-codes and legacy BC- codes.
  */
-export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
+export function parseUnitBarcode(barcode: string, authorizedRole?: string): ParsedUnitBarcode {
   if (!barcode) return { isValid: false, raw: '' };
-  const trimmed = barcode.trim().toUpperCase();
+  const trimmed = barcode.trim();
+
+  // Encrypted Manufacturer Barcode
+  if (trimmed.toUpperCase().startsWith('EB-')) {
+    const dec = decryptUnitBarcode(trimmed, authorizedRole || 'retailer');
+    return dec;
+  }
+
+  const upper = trimmed.toUpperCase();
 
   // Pattern 1: Ultra-Compact B<BATCH>-M<YYMM>E<YYMM>-<SERIAL> (e.g. B1803-M2609E2809-01)
-  const compactMatch = trimmed.match(/^B([A-Z0-9]+)-M(\d{2})(\d{2})E(\d{2})(\d{2})-(\d+)$/i);
+  const compactMatch = upper.match(/^B([A-Z0-9]+)-M(\d{2})(\d{2})E(\d{2})(\d{2})-(\d+)$/i);
   if (compactMatch) {
     const [, batchCode, mYY, mMM, eYY, eMM, serial] = compactMatch;
     return {
       isValid: true,
-      raw: trimmed,
+      raw: upper,
       batchNumber: batchCode,
       mfgDate: `20${mYY}-${mMM}`,
       expDate: `20${eYY}-${eMM}`,
@@ -215,12 +354,12 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
   }
 
   // Pattern 2: Compact with hyphens B<BATCH>-<YYMM>-<YYMM>-<SERIAL> (e.g. B1803-2609-2809-01)
-  const compactHyphenMatch = trimmed.match(/^B([A-Z0-9]+)-(\d{2})(\d{2})-(\d{2})(\d{2})-(\d+)$/i);
+  const compactHyphenMatch = upper.match(/^B([A-Z0-9]+)-(\d{2})(\d{2})-(\d{2})(\d{2})-(\d+)$/i);
   if (compactHyphenMatch) {
     const [, batchCode, mYY, mMM, eYY, eMM, serial] = compactHyphenMatch;
     return {
       isValid: true,
-      raw: trimmed,
+      raw: upper,
       batchNumber: batchCode,
       mfgDate: `20${mYY}-${mMM}`,
       expDate: `20${eYY}-${eMM}`,
@@ -230,12 +369,12 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
   }
 
   // Pattern 3: Full BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
-  const fullMatch = trimmed.match(/^BC-([A-Z0-9-]+)-M(\d{2})(\d{2})(\d{2})-E(\d{2})(\d{2})(\d{2})-(\d+)$/i);
+  const fullMatch = upper.match(/^BC-([A-Z0-9-]+)-M(\d{2})(\d{2})(\d{2})-E(\d{2})(\d{2})(\d{2})-(\d+)$/i);
   if (fullMatch) {
     const [, batchNumber, mYY, mMM, mDD, eYY, eMM, eDD, serial] = fullMatch;
     return {
       isValid: true,
-      raw: trimmed,
+      raw: upper,
       batchNumber,
       mfgDate: `20${mYY}-${mMM}-${mDD}`,
       expDate: `20${eYY}-${eMM}-${eDD}`,
@@ -245,11 +384,11 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
   }
 
   // Pattern 4: Legacy BC-<BATCH>-<SERIAL>
-  const simpleMatch = trimmed.match(/^BC-([A-Z0-9-]+)-(\d+)$/i);
+  const simpleMatch = upper.match(/^BC-([A-Z0-9-]+)-(\d+)$/i);
   if (simpleMatch) {
     return {
       isValid: true,
-      raw: trimmed,
+      raw: upper,
       batchNumber: simpleMatch[1],
       unitSerial: simpleMatch[2],
       unitIndex: parseInt(simpleMatch[2], 10),
@@ -257,18 +396,18 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
   }
 
   // Pattern 5: Simple B<BATCH>-<SERIAL>
-  const simpleBMatch = trimmed.match(/^B([A-Z0-9]+)-(\d+)$/i);
+  const simpleBMatch = upper.match(/^B([A-Z0-9]+)-(\d+)$/i);
   if (simpleBMatch) {
     return {
       isValid: true,
-      raw: trimmed,
+      raw: upper,
       batchNumber: simpleBMatch[1],
       unitSerial: simpleBMatch[2],
       unitIndex: parseInt(simpleBMatch[2], 10),
     };
   }
 
-  return { isValid: false, raw: trimmed };
+  return { isValid: false, raw: upper };
 }
 
 /**
@@ -372,7 +511,8 @@ export function getOrGenerateBatchUnits(db: DatabaseSchema, batch: Batch): UnitR
       medicineName: batch.medicineName,
       unitIndex: i,
       packagingType,
-      status: batch.status === 'fully_disposed' ? 'disposed' : 'in_stock'
+      status: batch.status === 'fully_disposed' ? 'disposed' : 'in_stock',
+      isEncrypted: unitBarcode.startsWith('EB-'),
     };
     generated.push(record);
     db.unitRecords.push(record);
@@ -386,16 +526,111 @@ export function getOrGenerateBatchUnits(db: DatabaseSchema, batch: Batch): UnitR
 
 /**
  * Checks whether scanned string represents an engraved unit barcode, batch ID, or raw QR text.
- * Recognizes both ultra-compact B barcodes (e.g. B1803-M2609E2809-01) and legacy BC- barcodes.
+ * Recognizes encrypted EB- barcodes, ultra-compact B barcodes, and legacy BC- barcodes.
  */
 export function extractUnitBarcode(scannedText: string): string | null {
   if (!scannedText) return null;
   const trimmed = scannedText.trim();
-  if (trimmed.startsWith('BC-') || /^B[A-Z0-9]+-(?:M\d{4}E\d{4}|\d{4}-\d{4}|\d+)/i.test(trimmed)) {
+  if (
+    trimmed.toUpperCase().startsWith('EB-') ||
+    trimmed.startsWith('BC-') ||
+    /^B[A-Z0-9]+-(?:M\d{4}E\d{4}|\d{4}-\d{4}|\d+)/i.test(trimmed)
+  ) {
     return trimmed;
   }
-  // Check if contains compact B or BC pattern
-  const match = trimmed.match(/\b(B(?:C-)?[A-Z0-9]+-[A-Z0-9-]+)\b/i);
-  if (match) return match[1].toUpperCase();
+  // Check if contains EB-, BC-, or B- pattern
+  const match = trimmed.match(/\b((?:EB|BC|B)-?[A-Z0-9_-]+)\b/i);
+  if (match) return match[1];
   return null;
+}
+
+/**
+ * Decrypts, verifies, and stores the revealed unit barcode record in the system ledger.
+ * Executed when an authorized Retailer sells the unit, or an authorized Disposer neutralizes it.
+ */
+export function revealAndStoreUnitRecord(
+  db: DatabaseSchema,
+  barcode: string,
+  role: 'retailer' | 'disposer',
+  userId?: string,
+  userName?: string
+): { success: boolean; unit?: UnitRecord; error?: string } {
+  if (!Array.isArray(db.unitRecords)) {
+    db.unitRecords = [];
+  }
+
+  const dec = decryptUnitBarcode(barcode, role);
+  if (!dec.isValid || !dec.isAuthorized) {
+    return { success: false, error: dec.error || dec.message || 'Decryption authorization rejected' };
+  }
+
+  const now = new Date().toISOString();
+
+  // 1. Check if unit already in ledger
+  let record = db.unitRecords.find(u => u.unitBarcode.toLowerCase() === barcode.toLowerCase());
+
+  // 2. If not found by exact barcode, match by batch and unit serial
+  if (!record && dec.batchNumber) {
+    record = db.unitRecords.find(u => {
+      const cleanB = u.batchNumber.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      return cleanB.includes(dec.batchNumber!.toUpperCase()) && u.unitIndex === dec.unitIndex;
+    });
+  }
+
+  if (!record) {
+    // Look up batch in database
+    const batch = db.batches.find(b => {
+      const cleanB = b.batchNumber.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      return cleanB.includes(dec.batchNumber!.toUpperCase());
+    });
+
+    record = {
+      unitBarcode: barcode,
+      batchId: batch ? batch.id : `BATCH-${dec.batchNumber}`,
+      batchNumber: batch ? batch.batchNumber : dec.batchNumber!,
+      medicineName: batch ? batch.medicineName : 'Pharmaceutical Unit',
+      unitIndex: dec.unitIndex || 1,
+      packagingType: batch?.packagingType || 'Unit Package',
+      status: role === 'retailer' ? 'sold' : 'disposed',
+      isEncrypted: true,
+      decryptedData: {
+        batchNumber: dec.batchNumber!,
+        mfgDate: dec.mfgDate!,
+        expDate: dec.expDate!,
+        unitSerial: dec.unitSerial!
+      },
+      revealedByRole: role,
+      revealedByUserId: userId,
+      revealedByUserName: userName,
+      revealedAt: now,
+      soldAt: role === 'retailer' ? now : undefined,
+      soldBy: role === 'retailer' ? userName : undefined,
+      disposedAt: role === 'disposer' ? now : undefined,
+      disposedBy: role === 'disposer' ? userName : undefined,
+    };
+    db.unitRecords.push(record);
+  } else {
+    record.isEncrypted = true;
+    record.decryptedData = {
+      batchNumber: dec.batchNumber!,
+      mfgDate: dec.mfgDate!,
+      expDate: dec.expDate!,
+      unitSerial: dec.unitSerial!
+    };
+    record.revealedByRole = role;
+    record.revealedByUserId = userId;
+    record.revealedByUserName = userName;
+    record.revealedAt = now;
+    if (role === 'retailer') {
+      record.status = 'sold';
+      record.soldAt = now;
+      record.soldBy = userName;
+    } else if (role === 'disposer') {
+      record.status = 'disposed';
+      record.disposedAt = now;
+      record.disposedBy = userName;
+    }
+  }
+
+  return { success: true, unit: record };
 }

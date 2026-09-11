@@ -7,6 +7,7 @@ import QRCode from 'qrcode';
 import crypto from 'crypto';
 import { extractBatchId, generateBatchQrCode } from '@/lib/qrHelper';
 import { generateOcgSecurityCode } from '@/lib/ocgHelper';
+import { revealAndStoreUnitRecord } from '@/lib/barcodeHelper';
 
 function revalidateAllDashboards() {
   try {
@@ -597,13 +598,16 @@ export async function finalizeDisposal(data: FormData) {
   if (batch) {
     batch.status = 'fully_disposed';
 
-    // Mark unit records as disposed
+    // Decrypt and store revealed unit records in system ledger, and mark as disposed
+    for (const bc of scannedUnitBarcodes) {
+      revealAndStoreUnitRecord(db, bc, 'disposer', session.sub, officerName || session.name);
+    }
     if (Array.isArray(db.unitRecords)) {
       for (const u of db.unitRecords) {
         if (u.batchId === batch.id || scannedUnitBarcodes.includes(u.unitBarcode)) {
           u.status = 'disposed';
           u.disposedAt = now;
-          u.disposedBy = session.name;
+          u.disposedBy = officerName || session.name;
           u.disposalId = disposalId;
         }
       }

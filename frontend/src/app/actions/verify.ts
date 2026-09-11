@@ -2,7 +2,7 @@
 
 import { readDb } from '@/lib/db';
 import { extractBatchId, parseBatchQr } from '@/lib/qrHelper';
-import { extractUnitBarcode, parseUnitBarcode, compareQrAndBarcodeDates } from '@/lib/barcodeHelper';
+import { extractUnitBarcode, parseUnitBarcode, compareQrAndBarcodeDates, decryptUnitBarcode } from '@/lib/barcodeHelper';
 import crypto from 'crypto';
 
 export interface CustodyEvent {
@@ -62,6 +62,14 @@ export interface VerificationResult {
     soldAt?: string;
     disposedAt?: string;
     invoiceNumber?: string;
+    isEncrypted?: boolean;
+    isRevealed?: boolean;
+    revealedByRole?: string;
+    revealedAt?: string;
+    revealedByUserName?: string;
+    decryptedMfgDate?: string;
+    decryptedExpDate?: string;
+    unitSerial?: string;
   };
   shipment?: {
     id: string;
@@ -180,29 +188,75 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
   let authenticityStatus: VerificationResult['authenticityStatus'] = 'genuine';
   let dateTamperAlert: DateTamperAlert | undefined;
 
-  // Check if searched query or extracted unit barcode contains engraved dates
-  const parsedBc = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(query);
-  if (parsedBc.isValid && (parsedBc.mfgDate || parsedBc.expDate)) {
-    const check = compareQrAndBarcodeDates(matchedBatch.mfgDate, matchedBatch.expDate, parsedBc.mfgDate, parsedBc.expDate);
-    if (!check.isMatch) {
-      authenticityStatus = 'counterfeit'; // Fraud alert: date tampering detected!
+  const rawBc = unitBc || query;
+  const isEncryptedBarcode = rawBc.toUpperCase().startsWith('EB-');
+
+  if (isEncryptedBarcode) {
+    const dec = decryptUnitBarcode(rawBc, 'public');
+    if (!dec.isValid && dec.error) {
+      authenticityStatus = 'counterfeit';
       dateTamperAlert = {
         isTampered: true,
-        message: `🚨 FRAUD WARNING: Engraved barcode dates (MFG: ${parsedBc.mfgDate || 'N/A'}, EXP: ${parsedBc.expDate || 'N/A'}) DO NOT MATCH verified blockchain batch record (MFG: ${matchedBatch.mfgDate}, EXP: ${matchedBatch.expDate})! This package has likely been re-labeled or forged.`,
-        barcodeMfg: parsedBc.mfgDate,
-        barcodeExp: parsedBc.expDate,
-        batchMfg: matchedBatch.mfgDate,
-        batchExp: matchedBatch.expDate,
+        message: `🚨 COUNTERFEIT / TAMPER WARNING: Cryptographic signature verification failed on manufacturer barcode! This barcode is forged, unauthorized, or tampered.`,
       };
+    } else if (matchedUnit?.decryptedData) {
+      const check = compareQrAndBarcodeDates(
+        matchedBatch.mfgDate,
+        matchedBatch.expDate,
+        matchedUnit.decryptedData.mfgDate,
+        matchedUnit.decryptedData.expDate
+      );
+      if (!check.isMatch) {
+        authenticityStatus = 'counterfeit';
+        dateTamperAlert = {
+          isTampered: true,
+          message: `🚨 FRAUD WARNING: Decrypted barcode dates (MFG: ${matchedUnit.decryptedData.mfgDate}, EXP: ${matchedUnit.decryptedData.expDate}) DO NOT MATCH verified blockchain batch record (MFG: ${matchedBatch.mfgDate}, EXP: ${matchedBatch.expDate})!`,
+          barcodeMfg: matchedUnit.decryptedData.mfgDate,
+          barcodeExp: matchedUnit.decryptedData.expDate,
+          batchMfg: matchedBatch.mfgDate,
+          batchExp: matchedBatch.expDate,
+        };
+      } else {
+        dateTamperAlert = {
+          isTampered: false,
+          message: `🔓 Revealed & Verified: Manufacturer encrypted barcode decrypted by ${matchedUnit.revealedByRole === 'retailer' ? 'Retailer' : 'Bio-Disposer'} and stored in system ledger (MFG: ${matchedUnit.decryptedData.mfgDate}, EXP: ${matchedUnit.decryptedData.expDate}).`,
+          barcodeMfg: matchedUnit.decryptedData.mfgDate,
+          barcodeExp: matchedUnit.decryptedData.expDate,
+          batchMfg: matchedBatch.mfgDate,
+          batchExp: matchedBatch.expDate,
+        };
+      }
     } else {
       dateTamperAlert = {
         isTampered: false,
-        message: `🛡️ Anti-Tamper Authenticated: Engraved barcode dates match batch blockchain record perfectly (MFG: ${parsedBc.mfgDate}, EXP: ${parsedBc.expDate}).`,
-        barcodeMfg: parsedBc.mfgDate,
-        barcodeExp: parsedBc.expDate,
-        batchMfg: matchedBatch.mfgDate,
-        batchExp: matchedBatch.expDate,
+        message: `🔒 Manufacturer Cryptographic Seal Verified: Signed with manufacturer HMAC. Encrypted batch dates, unit serial, and authenticity metadata are securely protected and will be revealed upon Retailer POS dispensing or Bio-Disposer destruction audit.`,
       };
+    }
+  } else {
+    // Check if searched query or extracted unit barcode contains plain/compact engraved dates
+    const parsedBc = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(query);
+    if (parsedBc.isValid && (parsedBc.mfgDate || parsedBc.expDate)) {
+      const check = compareQrAndBarcodeDates(matchedBatch.mfgDate, matchedBatch.expDate, parsedBc.mfgDate, parsedBc.expDate);
+      if (!check.isMatch) {
+        authenticityStatus = 'counterfeit'; // Fraud alert: date tampering detected!
+        dateTamperAlert = {
+          isTampered: true,
+          message: `🚨 FRAUD WARNING: Engraved barcode dates (MFG: ${parsedBc.mfgDate || 'N/A'}, EXP: ${parsedBc.expDate || 'N/A'}) DO NOT MATCH verified blockchain batch record (MFG: ${matchedBatch.mfgDate}, EXP: ${matchedBatch.expDate})! This package has likely been re-labeled or forged.`,
+          barcodeMfg: parsedBc.mfgDate,
+          barcodeExp: parsedBc.expDate,
+          batchMfg: matchedBatch.mfgDate,
+          batchExp: matchedBatch.expDate,
+        };
+      } else {
+        dateTamperAlert = {
+          isTampered: false,
+          message: `🛡️ Anti-Tamper Authenticated: Engraved barcode dates match batch blockchain record perfectly (MFG: ${parsedBc.mfgDate}, EXP: ${parsedBc.expDate}).`,
+          barcodeMfg: parsedBc.mfgDate,
+          barcodeExp: parsedBc.expDate,
+          batchMfg: matchedBatch.mfgDate,
+          batchExp: matchedBatch.expDate,
+        };
+      }
     }
   }
 
@@ -322,13 +376,23 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
           status: matchedUnit.status,
           soldAt: matchedUnit.soldAt,
           disposedAt: matchedUnit.disposedAt,
-          invoiceNumber: matchedUnit.invoiceNumber
+          invoiceNumber: matchedUnit.invoiceNumber,
+          isEncrypted: matchedUnit.isEncrypted || matchedUnit.unitBarcode.toUpperCase().startsWith('EB-'),
+          isRevealed: !!matchedUnit.revealedAt,
+          revealedByRole: matchedUnit.revealedByRole,
+          revealedAt: matchedUnit.revealedAt,
+          revealedByUserName: matchedUnit.revealedByUserName,
+          decryptedMfgDate: matchedUnit.decryptedData?.mfgDate,
+          decryptedExpDate: matchedUnit.decryptedData?.expDate,
+          unitSerial: matchedUnit.decryptedData?.unitSerial,
         }
       : unitBc && matchedBatch
       ? {
           unitBarcode: unitBc,
           packagingType: matchedBatch.packagingType || 'Unit Package',
-          status: (matchedBatch.status === 'fully_disposed' ? 'disposed' : 'in_stock') as 'in_stock' | 'sold' | 'disposed'
+          status: (matchedBatch.status === 'fully_disposed' ? 'disposed' : 'in_stock') as 'in_stock' | 'sold' | 'disposed',
+          isEncrypted: unitBc.toUpperCase().startsWith('EB-'),
+          isRevealed: false
         }
       : undefined,
     shipment: matchedShipment

@@ -623,6 +623,34 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
                           </span>
                         )}
                       </div>
+
+                      {result.unitInfo.isEncrypted && (
+                        <div className="mt-2 pt-2 border-t border-slate-700/60 text-xs">
+                          {result.unitInfo.isRevealed ? (
+                            <div className="flex flex-wrap items-center gap-1.5 text-emerald-300">
+                              <span>🔓 Revealed & Stored in Ledger:</span>
+                              <span className="font-semibold capitalize text-white">
+                                {result.unitInfo.revealedByRole === 'retailer' ? 'Retailer POS Sale' : 'Bio-Disposer Audit'}
+                              </span>
+                              {result.unitInfo.revealedByUserName && (
+                                <span className="text-slate-300">by {result.unitInfo.revealedByUserName}</span>
+                              )}
+                              {result.unitInfo.decryptedExpDate && (
+                                <span className="bg-emerald-950/80 text-emerald-200 px-2 py-0.5 rounded font-mono text-[10px] border border-emerald-800">
+                                  EXP: {result.unitInfo.decryptedExpDate}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5 text-amber-300">
+                              <span>🔒 Manufacturer Encrypted Barcode:</span>
+                              <span className="text-slate-300 text-[11px]">
+                                Confidential unit cipher. Revealed only when scanned by authorized Retailer or Disposer.
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
 
                     <div className="bg-white p-2.5 rounded-2xl shadow-md shrink-0">

@@ -410,13 +410,16 @@ export default function DisposePage({ params }: { params: { id: string } }) {
                 onScanned={(val) => {
                   const trimmed = val.trim();
                   if (trimmed) {
-                    const parsed = parseUnitBarcode(trimmed);
+                    const parsed = parseUnitBarcode(trimmed, 'disposer');
                     if (parsed.isValid && record?.batch) {
                       const check = compareQrAndBarcodeDates(record.batch.mfgDate, record.batch.expDate, parsed.mfgDate, parsed.expDate);
                       if (!check.isMatch) {
                         setScanTamperNotice({ isTampered: true, text: `🚨 FRAUD/TAMPER WARNING: Engraved barcode dates (MFG: ${parsed.mfgDate || 'N/A'}, EXP: ${parsed.expDate || 'N/A'}) DO NOT MATCH batch manifest (MFG: ${record.batch.mfgDate}, EXP: ${record.batch.expDate})!` });
                       } else {
-                        setScanTamperNotice({ isTampered: false, text: `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.` });
+                        const msg = parsed.isEncrypted
+                          ? `🔓 Decrypted Manufacturer Barcode: Unit #${parsed.unitSerial || '01'} (MFG: ${parsed.mfgDate}, EXP: ${parsed.expDate}) verified for destruction.`
+                          : `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.`;
+                        setScanTamperNotice({ isTampered: false, text: msg });
                       }
                     }
                     if (!scannedUnitBarcodes.includes(trimmed)) {
@@ -469,13 +472,16 @@ export default function DisposePage({ params }: { params: { id: string } }) {
               onClick={() => {
                 const trimmed = barcodeInput.trim();
                 if (trimmed) {
-                  const parsed = parseUnitBarcode(trimmed);
+                  const parsed = parseUnitBarcode(trimmed, 'disposer');
                   if (parsed.isValid && record?.batch) {
                     const check = compareQrAndBarcodeDates(record.batch.mfgDate, record.batch.expDate, parsed.mfgDate, parsed.expDate);
                     if (!check.isMatch) {
                       setScanTamperNotice({ isTampered: true, text: `🚨 FRAUD/TAMPER WARNING: Engraved barcode dates (MFG: ${parsed.mfgDate || 'N/A'}, EXP: ${parsed.expDate || 'N/A'}) DO NOT MATCH batch manifest (MFG: ${record.batch.mfgDate}, EXP: ${record.batch.expDate})!` });
                     } else {
-                      setScanTamperNotice({ isTampered: false, text: `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.` });
+                      const msg = parsed.isEncrypted
+                        ? `🔓 Decrypted Manufacturer Barcode: Unit #${parsed.unitSerial || '01'} (MFG: ${parsed.mfgDate}, EXP: ${parsed.expDate}) verified for destruction.`
+                        : `🛡️ Anti-Tamper Verified: Engraved barcode dates match batch manifest.`;
+                      setScanTamperNotice({ isTampered: false, text: msg });
                     }
                   }
                   if (!scannedUnitBarcodes.includes(trimmed)) {
@@ -497,22 +503,34 @@ export default function DisposePage({ params }: { params: { id: string } }) {
                 Destroyed Unit Serial Numbers ({scannedUnitBarcodes.length}):
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {scannedUnitBarcodes.map((bc, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 bg-orange-50 text-orange-950 border border-orange-200 rounded-md font-semibold"
-                  >
-                    <span>🔥</span>
-                    <span>{bc}</span>
-                    <button
-                      type="button"
-                      onClick={() => setScannedUnitBarcodes(prev => prev.filter((_, i) => i !== idx))}
-                      className="text-orange-400 hover:text-rose-600 ml-0.5"
+                {scannedUnitBarcodes.map((bc, idx) => {
+                  const parsed = parseUnitBarcode(bc, 'disposer');
+                  return (
+                    <span
+                      key={idx}
+                      className={`inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 rounded-md font-semibold border ${
+                        parsed.isEncrypted
+                          ? 'bg-emerald-50 text-emerald-900 border-emerald-300'
+                          : 'bg-orange-50 text-orange-950 border-orange-200'
+                      }`}
+                      title={parsed.isEncrypted ? `Decrypted: Unit #${parsed.unitSerial || '01'} | EXP: ${parsed.expDate} | MFG: ${parsed.mfgDate}` : undefined}
                     >
-                      ✕
-                    </button>
-                  </span>
-                ))}
+                      <span>{parsed.isEncrypted ? '🔓' : '🔥'}</span>
+                      <span>
+                        {parsed.isEncrypted
+                          ? `${bc.slice(0, 8)}... (#${parsed.unitSerial || '01'} Exp:${parsed.expDate})`
+                          : bc}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setScannedUnitBarcodes(prev => prev.filter((_, i) => i !== idx))}
+                        className="text-slate-400 hover:text-rose-600 ml-0.5"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  );
+                })}
               </div>
             </div>
           ) : (

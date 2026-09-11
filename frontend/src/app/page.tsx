@@ -726,10 +726,10 @@ export default function Home() {
                       {copiedRole === acc.role ? "✓ Copied!" : "Copy Email"}
                     </button>
                     <Link
-                      href={`/login?email=${encodeURIComponent(acc.email)}`}
+                      href={`/login?email=${encodeURIComponent(acc.email)}&auto=true`}
                       className="px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-xs"
                     >
-                      Login →
+                      1-Click Launch →
                     </Link>
                   </div>
                 </div>

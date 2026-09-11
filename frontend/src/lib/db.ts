@@ -106,6 +106,17 @@ export interface UnitRecord {
   unitIndex: number;
   packagingType: string;
   status: 'in_stock' | 'sold' | 'disposed';
+  isEncrypted?: boolean;
+  decryptedData?: {
+    batchNumber: string;
+    mfgDate: string;
+    expDate: string;
+    unitSerial: string;
+  };
+  revealedByRole?: 'retailer' | 'disposer' | 'manufacturer';
+  revealedByUserId?: string;
+  revealedByUserName?: string;
+  revealedAt?: string;
   soldAt?: string;
   soldBy?: string;
   soldToCustomer?: string;
@@ -311,6 +322,13 @@ const SEED_USERS: User[] = [
     email: 'eknath1303@gmail.com',
     passwordHash: SEED_PASSWORD_HASH,
     role: 'disposer'
+  },
+  {
+    id: 'seed-host-01',
+    name: 'Central Drug Regulatory Authority (Host Control)',
+    email: 'host@pharmatrack.com',
+    passwordHash: SEED_PASSWORD_HASH,
+    role: 'host'
   }
 ];
 

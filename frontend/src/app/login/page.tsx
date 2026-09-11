@@ -19,12 +19,17 @@ function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeQuickRole, setActiveQuickRole] = useState<string | null>(null);
 
   useEffect(() => {
     const emailParam = searchParams.get("email");
+    const autoParam = searchParams.get("auto");
     if (emailParam) {
       setEmail(emailParam);
       setPassword("password123");
+      if (autoParam === "true") {
+        handleLogin(undefined, emailParam, "password123");
+      }
     }
   }, [searchParams]);
 
@@ -33,22 +38,32 @@ function LoginForm() {
     setLoading(true);
     setError("");
 
-    const formData = new FormData();
-    formData.set("email", customEmail || email);
-    formData.set("password", customPassword || password);
+    const targetEmail = (customEmail || email).trim();
+    const targetPassword = (customPassword || password).trim();
 
-    const res = await loginUser(formData);
-    
-    if (res.success && res.role) {
-      // Use window.location.href to guarantee full session cookie synchronization
-      window.location.href = `/${res.role}`;
-    } else {
-      setError(res.error || "Login failed");
+    const formData = new FormData();
+    formData.set("email", targetEmail);
+    formData.set("password", targetPassword);
+
+    try {
+      const res = await loginUser(formData);
+      if (res.success && res.role) {
+        // Full navigation with session sync
+        window.location.href = `/${res.role}`;
+      } else {
+        setError(res.error || "Login failed. Please check credentials.");
+        setLoading(false);
+        setActiveQuickRole(null);
+      }
+    } catch (err: any) {
+      setError("Network or server connection error: " + (err?.message || "Please retry."));
       setLoading(false);
+      setActiveQuickRole(null);
     }
   };
 
-  const handleQuickLogin = (quickEmail: string) => {
+  const handleQuickLogin = (role: string, quickEmail: string) => {
+    setActiveQuickRole(role);
     setEmail(quickEmail);
     setPassword("password123");
     handleLogin(undefined, quickEmail, "password123");
@@ -77,18 +92,25 @@ function LoginForm() {
             ⚡ Quick Demo 1-Click Sign-In
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {QUICK_ACCOUNTS.map((acc) => (
-              <button
-                key={acc.role}
-                type="button"
-                disabled={loading}
-                onClick={() => handleQuickLogin(acc.email)}
-                className="px-3 py-2 text-xs font-medium rounded-xl bg-white border border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
-              >
-                <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                {acc.role}
-              </button>
-            ))}
+            {QUICK_ACCOUNTS.map((acc) => {
+              const isThisLoading = activeQuickRole === acc.role;
+              return (
+                <button
+                  key={acc.role}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleQuickLogin(acc.role, acc.email)}
+                  className={`px-3 py-2 text-xs font-medium rounded-xl border transition-all shadow-xs flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50 ${
+                    isThisLoading
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400/40'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-blue-400 hover:text-blue-600'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isThisLoading ? 'bg-white animate-ping' : 'bg-blue-500'}`}></span>
+                  <span>{isThisLoading ? `Entering ${acc.role}...` : acc.role}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

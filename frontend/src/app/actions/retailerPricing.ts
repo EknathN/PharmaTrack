@@ -2,7 +2,7 @@
 
 import { readDb, writeDb, createAlert, RetailerPriceSetting, InvoiceItem, Sale, UnitRecord } from '@/lib/db';
 import { getCurrentSession } from './auth';
-import { getOrGenerateBatchUnits } from '@/lib/barcodeHelper';
+import { getOrGenerateBatchUnits, revealAndStoreUnitRecord } from '@/lib/barcodeHelper';
 import { revalidatePath } from 'next/cache';
 
 /**
@@ -184,13 +184,14 @@ export async function generateCustomerInvoice(data: FormData) {
       assignedBarcodes = availableUnits.slice(0, qty).map(u => u.unitBarcode);
     }
 
-    // Mark unit records as sold
+    // Mark unit records as sold, reveal encrypted manufacturer cipher and store in system ledger
     for (const barcode of assignedBarcodes) {
-      const uRecord = db.unitRecords?.find(u => u.unitBarcode === barcode);
+      revealAndStoreUnitRecord(db, barcode, 'retailer', session.sub, retailerUser?.name || session.name);
+      const uRecord = db.unitRecords?.find(u => u.unitBarcode.toLowerCase() === barcode.toLowerCase());
       if (uRecord) {
         uRecord.status = 'sold';
         uRecord.soldAt = now;
-        uRecord.soldBy = session.name;
+        uRecord.soldBy = retailerUser?.name || session.name;
         uRecord.soldToCustomer = customerName;
         uRecord.invoiceNumber = invoiceNumber;
       }

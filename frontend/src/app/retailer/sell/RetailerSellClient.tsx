@@ -108,7 +108,7 @@ export default function RetailerSellClient({
 
     if (unitBc) {
       // Find batch that owns this unit barcode or matches batch prefix/suffix
-      const parsed = parseUnitBarcode(unitBc);
+      const parsed = parseUnitBarcode(unitBc, 'retailer');
       matchedItem = inventory.find(inv => {
         if (inv.sampleUnitBarcodes && inv.sampleUnitBarcodes.includes(unitBc)) return true;
         const cleanBatch = inv.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
@@ -140,7 +140,7 @@ export default function RetailerSellClient({
     }
 
     // Anti-Fraud check: if unit barcode contains embedded dates, verify against inventory record
-    const parsedBc = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(raw);
+    const parsedBc = unitBc ? parseUnitBarcode(unitBc, 'retailer') : parseUnitBarcode(raw, 'retailer');
     if (parsedBc.isValid && (parsedBc.mfgDate || parsedBc.expDate)) {
       const dateCheck = compareQrAndBarcodeDates(matchedItem.mfgDate, matchedItem.expDate, parsedBc.mfgDate, parsedBc.expDate);
       if (!dateCheck.isMatch) {
@@ -152,8 +152,11 @@ export default function RetailerSellClient({
     // Add to cart
     addItemToCart(matchedItem, unitBc || undefined);
     setBarcodeInput('');
-    setPosSuccess(`Added 1 unit of ${matchedItem.medicineName} (${matchedItem.packagingType}).`);
-    setTimeout(() => setPosSuccess(''), 3500);
+    const revealedMsg = parsedBc.isEncrypted && parsedBc.isAuthorized
+      ? `🔓 Decrypted Manufacturer Barcode: Unit #${parsedBc.unitSerial || '01'} (MFG: ${parsedBc.mfgDate}, EXP: ${parsedBc.expDate}) verified & added to bill.`
+      : `Added 1 unit of ${matchedItem.medicineName} (${matchedItem.packagingType}).`;
+    setPosSuccess(revealedMsg);
+    setTimeout(() => setPosSuccess(''), 4500);
   };
 
   // Simultaneous Dual Scan Handler (Batch QR + Unit Barcode)
@@ -172,7 +175,7 @@ export default function RetailerSellClient({
       matchedItem = inventory.find(inv => inv.batchId === allocation.batchId);
     }
     if (!matchedItem && allocation.unitBarcode) {
-      const parsed = parseUnitBarcode(allocation.unitBarcode);
+      const parsed = parseUnitBarcode(allocation.unitBarcode, 'retailer');
       matchedItem = inventory.find(inv => {
         if (inv.sampleUnitBarcodes && inv.sampleUnitBarcodes.includes(allocation.unitBarcode!)) return true;
         const cleanBatch = inv.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
@@ -637,14 +640,24 @@ export default function RetailerSellClient({
                       {/* Scanned Barcodes Badges */}
                       {item.scannedUnitBarcodes.length > 0 && (
                         <div className="flex flex-wrap gap-1">
-                          {item.scannedUnitBarcodes.map((bc, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[9px] font-mono bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded border border-slate-200"
-                            >
-                              🏷️ {bc}
-                            </span>
-                          ))}
+                          {item.scannedUnitBarcodes.map((bc, idx) => {
+                            const parsed = parseUnitBarcode(bc, 'retailer');
+                            return (
+                              <span
+                                key={idx}
+                                className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
+                                  parsed.isEncrypted
+                                    ? 'bg-emerald-50 text-emerald-800 border-emerald-300 font-semibold'
+                                    : 'bg-slate-100 text-slate-700 border-slate-200'
+                                }`}
+                                title={parsed.isEncrypted ? `Decrypted: Unit #${parsed.unitSerial || '01'} | MFG: ${parsed.mfgDate} | EXP: ${parsed.expDate}` : undefined}
+                              >
+                                {parsed.isEncrypted
+                                  ? `🔓 ${bc.slice(0, 8)}... (Unit #${parsed.unitSerial || '01'} Exp:${parsed.expDate || 'N/A'})`
+                                  : `🏷️ ${bc}`}
+                              </span>
+                            );
+                          })}
                         </div>
                       )}
 
