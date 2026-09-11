@@ -160,8 +160,10 @@ export default function QrScanner({
     const trimmed = raw.trim();
     if (!trimmed) return;
 
-    // Check if code is a 1D unit barcode (starts with BC- or matches unit regex)
-    const isBarcodeLike = trimmed.toUpperCase().startsWith('BC-') || /^BC-[A-Z0-9-]+/i.test(trimmed);
+    // Check if code is a 1D unit barcode (ultra-compact B-code or legacy BC-)
+    const isBarcodeLike = trimmed.toUpperCase().startsWith('BC-') ||
+      trimmed.toUpperCase().startsWith('B') ||
+      /^B[A-Z0-9]+-(?:M\d{4}E\d{4}|\d{4}-\d{4}|\d+)/i.test(trimmed);
     const parsedBc = isBarcodeLike ? parseUnitBarcode(trimmed) : null;
     const parsedQr = !parsedBc?.isValid ? parseBatchQr(trimmed) : null;
 
@@ -263,7 +265,7 @@ export default function QrScanner({
 
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox: { width: 280, height: 260 } },
+        { fps: 15, qrbox: { width: 340, height: 220 } },
         (decodedText: string) => {
           handleDetectedCode(decodedText);
         },
@@ -459,7 +461,7 @@ export default function QrScanner({
                 if (bc.isValid) setDetectedBarcode(bc);
               }}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
-              placeholder="e.g. BC-BN...-M260910-E260912-0001"
+              placeholder="e.g. B1803-M2609E2809-01"
             />
           </div>
         </div>

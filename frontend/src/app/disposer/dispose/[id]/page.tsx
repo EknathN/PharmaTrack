@@ -461,7 +461,7 @@ export default function DisposePage({ params }: { params: { id: string } }) {
               type="text"
               value={barcodeInput}
               onChange={(e) => setBarcodeInput(e.target.value)}
-              placeholder="Scan unit barcode on bottle/strip (e.g. BC-BN...-M260910-E260912-0001)..."
+              placeholder="Scan unit barcode on bottle/strip (e.g. B1803-M2609E2809-01)..."
               className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
             />
             <button

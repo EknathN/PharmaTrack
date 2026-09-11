@@ -105,7 +105,46 @@ export function generateCode128Svg(text: string, options: BarcodeSvgOptions = {}
 }
 
 /**
- * Formats a date string (YYYY-MM-DD or ISO) into compact 6-digit YYMMDD format.
+ * Extracts a compact, recognizable batch suffix for ultra-short barcodes.
+ * Avoids long redundant prefixes like "BN-202609-1803" -> "1803"
+ */
+export function getCompactBatchCode(batchNumber?: string): string {
+  if (!batchNumber) return 'B01';
+  const clean = batchNumber.trim().toUpperCase();
+  // If format is BN-YYYYMM-XXXX or BN-XXXX, extract the unique lot suffix
+  const bnMatch = clean.match(/BN-(?:\d{4,6}-)?([A-Z0-9]+)$/i);
+  if (bnMatch) return bnMatch[1];
+
+  // If contains hyphens, take the last segment
+  const parts = clean.split('-').filter(Boolean);
+  if (parts.length > 1) {
+    return parts[parts.length - 1];
+  }
+
+  // Otherwise clean alphanumeric, limit to 6 chars
+  const alphanum = clean.replace(/[^A-Z0-9]/gi, '');
+  return alphanum.length > 6 ? alphanum.slice(-6) : alphanum || 'B01';
+}
+
+/**
+ * Compact date format: YYMM (4 characters)
+ * Example: "2026-09-10" -> "2609"
+ */
+export function formatCompactDate(dateStr?: string): string {
+  if (!dateStr) return '0000';
+  const clean = dateStr.trim();
+  const parts = clean.split('-');
+  if (parts.length >= 2) {
+    const yy = parts[0].trim().slice(-2);
+    const mm = parts[1].trim().padStart(2, '0');
+    return `${yy}${mm}`;
+  }
+  const digits = clean.replace(/[^0-9]/g, '');
+  return digits.length >= 4 ? digits.slice(-4) : digits.padStart(4, '0');
+}
+
+/**
+ * Formats a date string (YYYY-MM-DD or ISO) into 6-digit YYMMDD format.
  * Example: "2026-09-10" -> "260910"
  */
 export function formatDateForBarcode(dateStr?: string): string {
@@ -124,9 +163,10 @@ export function formatDateForBarcode(dateStr?: string): string {
 }
 
 /**
- * Formats an anti-tamper unit barcode serial string embedding both Manufacturing and Expiry dates.
- * Format: BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
- * Example: "BC-BN-202609-1803-M260910-E260912-0001"
+ * Formats an ultra-compact anti-tamper unit barcode embedding both Manufacturing and Expiry dates.
+ * Format: B<SHORT_BATCH>-M<YYMM>E<YYMM>-<SERIAL>
+ * Example: "B1803-M2609E2809-01" (Only ~19 characters!)
+ * Keeps barcode narrow so dual camera scanners can detect both QR and Barcode easily in one frame.
  */
 export function formatUnitBarcode(
   batchNumber: string,
@@ -134,32 +174,62 @@ export function formatUnitBarcode(
   mfgDate?: string,
   expDate?: string
 ): string {
-  const cleanBatch = (batchNumber || 'BATCH').replace(/[^A-Z0-9-]/gi, '').toUpperCase();
-  const mfg = formatDateForBarcode(mfgDate);
-  const exp = formatDateForBarcode(expDate);
-  const serial = String(unitIndex).padStart(4, '0');
-  return `BC-${cleanBatch}-M${mfg}-E${exp}-${serial}`;
+  const shortBatch = getCompactBatchCode(batchNumber);
+  const mfg = formatCompactDate(mfgDate);
+  const exp = formatCompactDate(expDate);
+  const serial = String(unitIndex).padStart(2, '0');
+  return `B${shortBatch}-M${mfg}E${exp}-${serial}`;
 }
 
 export interface ParsedUnitBarcode {
   isValid: boolean;
   raw: string;
   batchNumber?: string;
-  mfgDate?: string; // Standard YYYY-MM-DD
-  expDate?: string; // Standard YYYY-MM-DD
+  mfgDate?: string; // Standard YYYY-MM
+  expDate?: string; // Standard YYYY-MM
   unitSerial?: string;
   unitIndex?: number;
 }
 
 /**
  * Parses an engraved unit barcode, extracting the batch number, embedded manufacturing date,
- * expiry date, and unique unit serial.
+ * expiry date, and unique unit serial. Supports both ultra-compact and full legacy formats.
  */
 export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
   if (!barcode) return { isValid: false, raw: '' };
   const trimmed = barcode.trim().toUpperCase();
 
-  // Pattern 1: BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
+  // Pattern 1: Ultra-Compact B<BATCH>-M<YYMM>E<YYMM>-<SERIAL> (e.g. B1803-M2609E2809-01)
+  const compactMatch = trimmed.match(/^B([A-Z0-9]+)-M(\d{2})(\d{2})E(\d{2})(\d{2})-(\d+)$/i);
+  if (compactMatch) {
+    const [, batchCode, mYY, mMM, eYY, eMM, serial] = compactMatch;
+    return {
+      isValid: true,
+      raw: trimmed,
+      batchNumber: batchCode,
+      mfgDate: `20${mYY}-${mMM}`,
+      expDate: `20${eYY}-${eMM}`,
+      unitSerial: serial,
+      unitIndex: parseInt(serial, 10),
+    };
+  }
+
+  // Pattern 2: Compact with hyphens B<BATCH>-<YYMM>-<YYMM>-<SERIAL> (e.g. B1803-2609-2809-01)
+  const compactHyphenMatch = trimmed.match(/^B([A-Z0-9]+)-(\d{2})(\d{2})-(\d{2})(\d{2})-(\d+)$/i);
+  if (compactHyphenMatch) {
+    const [, batchCode, mYY, mMM, eYY, eMM, serial] = compactHyphenMatch;
+    return {
+      isValid: true,
+      raw: trimmed,
+      batchNumber: batchCode,
+      mfgDate: `20${mYY}-${mMM}`,
+      expDate: `20${eYY}-${eMM}`,
+      unitSerial: serial,
+      unitIndex: parseInt(serial, 10),
+    };
+  }
+
+  // Pattern 3: Full BC-<BATCH>-M<YYMMDD>-E<YYMMDD>-<SERIAL>
   const fullMatch = trimmed.match(/^BC-([A-Z0-9-]+)-M(\d{2})(\d{2})(\d{2})-E(\d{2})(\d{2})(\d{2})-(\d+)$/i);
   if (fullMatch) {
     const [, batchNumber, mYY, mMM, mDD, eYY, eMM, eDD, serial] = fullMatch;
@@ -174,7 +244,7 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
     };
   }
 
-  // Pattern 2: Legacy or simplified BC-<BATCH>-<SERIAL>
+  // Pattern 4: Legacy BC-<BATCH>-<SERIAL>
   const simpleMatch = trimmed.match(/^BC-([A-Z0-9-]+)-(\d+)$/i);
   if (simpleMatch) {
     return {
@@ -183,6 +253,18 @@ export function parseUnitBarcode(barcode: string): ParsedUnitBarcode {
       batchNumber: simpleMatch[1],
       unitSerial: simpleMatch[2],
       unitIndex: parseInt(simpleMatch[2], 10),
+    };
+  }
+
+  // Pattern 5: Simple B<BATCH>-<SERIAL>
+  const simpleBMatch = trimmed.match(/^B([A-Z0-9]+)-(\d+)$/i);
+  if (simpleBMatch) {
+    return {
+      isValid: true,
+      raw: trimmed,
+      batchNumber: simpleBMatch[1],
+      unitSerial: simpleBMatch[2],
+      unitIndex: parseInt(simpleBMatch[2], 10),
     };
   }
 
@@ -203,14 +285,38 @@ export function compareQrAndBarcodeDates(
     return { isMatch: true, mfgMatch: true, expMatch: true, notice: 'Legacy barcode format (no embedded dates).' };
   }
 
-  const norm = (d?: string) => (d || '').replace(/[^0-9]/g, '').slice(-6); // compare YYMMDD or MMDDYY
-  const mfgMatch = !qrMfg || norm(qrMfg) === norm(bcMfg) || qrMfg === bcMfg;
-  const expMatch = !qrExp || norm(qrExp) === norm(bcExp) || qrExp === bcExp;
+  // Extract Year and Month digits (e.g. "2026-09-10" -> "2609" and "2026-09" -> "2609")
+  const normYm = (d?: string) => {
+    if (!d) return '';
+    const clean = d.trim();
+    const parts = clean.split('-');
+    if (parts.length >= 2) {
+      const yy = parts[0].slice(-2);
+      const mm = parts[1].padStart(2, '0').slice(0, 2);
+      return `${yy}${mm}`;
+    }
+    const digits = clean.replace(/[^0-9]/g, '');
+    if (digits.length === 8) {
+      return `${digits.slice(2, 4)}${digits.slice(4, 6)}`;
+    }
+    if (digits.length === 6) {
+      return `${digits.slice(2, 4)}${digits.slice(4, 6)}`;
+    }
+    return digits.slice(-4);
+  };
+
+  const qMfgYm = normYm(qrMfg);
+  const qExpYm = normYm(qrExp);
+  const bMfgYm = normYm(bcMfg);
+  const bExpYm = normYm(bcExp);
+
+  const mfgMatch = !qMfgYm || !bMfgYm || qMfgYm === bMfgYm;
+  const expMatch = !qExpYm || !bExpYm || qExpYm === bExpYm;
 
   const isMatch = mfgMatch && expMatch;
   const notice = isMatch
-    ? '✓ Tamper-proof verification passed: QR and engraved barcode dates match.'
-    : '⚠️ TAMPER ALERT: Barcode engraved dates do not match printed carton QR dates!';
+    ? '✓ Anti-Tamper Verified: QR and engraved barcode dates match.'
+    : '⚠️ FRAUD ALERT: Barcode dates do not match printed carton QR dates!';
 
   return { isMatch, mfgMatch, expMatch, notice };
 }
@@ -280,15 +386,16 @@ export function getOrGenerateBatchUnits(db: DatabaseSchema, batch: Batch): UnitR
 
 /**
  * Checks whether scanned string represents an engraved unit barcode, batch ID, or raw QR text.
+ * Recognizes both ultra-compact B barcodes (e.g. B1803-M2609E2809-01) and legacy BC- barcodes.
  */
 export function extractUnitBarcode(scannedText: string): string | null {
   if (!scannedText) return null;
   const trimmed = scannedText.trim();
-  if (trimmed.startsWith('BC-')) {
+  if (trimmed.startsWith('BC-') || /^B[A-Z0-9]+-(?:M\d{4}E\d{4}|\d{4}-\d{4}|\d+)/i.test(trimmed)) {
     return trimmed;
   }
-  // Check if contains BC- pattern
-  const match = trimmed.match(/\b(BC-[A-Z0-9-]+)\b/i);
+  // Check if contains compact B or BC pattern
+  const match = trimmed.match(/\b(B(?:C-)?[A-Z0-9]+-[A-Z0-9-]+)\b/i);
   if (match) return match[1].toUpperCase();
   return null;
 }

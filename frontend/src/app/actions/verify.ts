@@ -118,10 +118,16 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
     ? db.unitRecords.find(u => u.unitBarcode.toLowerCase() === unitBc.toLowerCase())
     : undefined;
 
+  const parsedUnit = unitBc ? parseUnitBarcode(unitBc) : parseUnitBarcode(query);
+
   // 2. Find matching batch
   let matchedBatch = db.batches.find(b => {
     if (matchedUnit && b.id === matchedUnit.batchId) return true;
     if (unitBc && unitBc.toUpperCase().includes(b.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase())) return true;
+    if (parsedUnit?.isValid && parsedUnit.batchNumber) {
+      const cleanB = b.batchNumber.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      if (cleanB.includes(parsedUnit.batchNumber.toUpperCase())) return true;
+    }
     if (parsed.batchId && b.id.toLowerCase() === parsed.batchId.toLowerCase()) return true;
     if (extractedId && b.id.toLowerCase() === extractedId.toLowerCase()) return true;
     if (b.id.toLowerCase() === searchLower) return true;

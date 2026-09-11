@@ -84,7 +84,7 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
 
       await scanner.start(
         { facingMode: facing },
-        { fps: 15, qrbox: { width: 280, height: 260 } },
+        { fps: 15, qrbox: { width: 340, height: 220 } },
         (decodedText: string) => {
           stopCamera();
           handleVerify(decodedText);

@@ -107,11 +107,14 @@ export default function RetailerSellClient({
     let matchedItem: InventoryItemWithPricing | undefined;
 
     if (unitBc) {
-      // Find batch that owns this unit barcode or matches batch prefix
+      // Find batch that owns this unit barcode or matches batch prefix/suffix
+      const parsed = parseUnitBarcode(unitBc);
       matchedItem = inventory.find(inv => {
         if (inv.sampleUnitBarcodes && inv.sampleUnitBarcodes.includes(unitBc)) return true;
         const cleanBatch = inv.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
-        return unitBc.toUpperCase().includes(cleanBatch);
+        if (unitBc.toUpperCase().includes(cleanBatch)) return true;
+        if (parsed.batchNumber && cleanBatch.includes(parsed.batchNumber.toUpperCase())) return true;
+        return false;
       });
     }
 
@@ -169,14 +172,22 @@ export default function RetailerSellClient({
       matchedItem = inventory.find(inv => inv.batchId === allocation.batchId);
     }
     if (!matchedItem && allocation.unitBarcode) {
+      const parsed = parseUnitBarcode(allocation.unitBarcode);
       matchedItem = inventory.find(inv => {
         if (inv.sampleUnitBarcodes && inv.sampleUnitBarcodes.includes(allocation.unitBarcode!)) return true;
         const cleanBatch = inv.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
-        return allocation.unitBarcode!.toUpperCase().includes(cleanBatch);
+        if (allocation.unitBarcode!.toUpperCase().includes(cleanBatch)) return true;
+        if (parsed.batchNumber && cleanBatch.includes(parsed.batchNumber.toUpperCase())) return true;
+        return false;
       });
     }
     if (!matchedItem && allocation.batchNumber) {
-      matchedItem = inventory.find(inv => inv.batchNumber.toLowerCase() === allocation.batchNumber!.toLowerCase());
+      matchedItem = inventory.find(inv => {
+        return (
+          inv.batchNumber.toLowerCase() === allocation.batchNumber!.toLowerCase() ||
+          inv.batchNumber.toLowerCase().includes(allocation.batchNumber!.toLowerCase())
+        );
+      });
     }
 
     if (!matchedItem) {
@@ -495,7 +506,7 @@ export default function RetailerSellClient({
                     type="text"
                     value={barcodeInput}
                     onChange={(e) => setBarcodeInput(e.target.value)}
-                    placeholder="Scan bottle / strip barcode (e.g. BC-BN-202609-1803-0001)..."
+                    placeholder="Scan bottle / strip barcode (e.g. B1803-M2609E2809-01)..."
                     className="w-full px-4 py-3 text-xs bg-slate-50 border border-slate-200 rounded-xl font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     autoFocus
                   />
