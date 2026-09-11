@@ -10,29 +10,10 @@ interface BarcodeScannerProps {
   placeholder?: string;
 }
 
-/** Play a short synthetic confirmation chime upon successful barcode scan */
-function playSuccessChime() {
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const audioCtx = new AudioContextClass();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(783.99, audioCtx.currentTime); // G5
-    osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.15); // C6
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.25);
-  } catch (e) {}
-}
-
 /**
  * Dedicated 1D Unit Barcode Scanner Component.
- * Specifically configured for Code 128 barcodes (EB-..., B-..., BC-...) engraved on medicine packaging.
+ * Optimized specifically for Code 128 barcodes engraved on medicine packaging.
+ * Silent (zero audio/chimes), continuous auto-focus, high FPS, with torch support.
  */
 export default function BarcodeScanner({
   label = "1D Unit Barcode Scanner",
@@ -44,6 +25,9 @@ export default function BarcodeScanner({
   const [inputVal, setInputVal] = useState('');
   const [error, setError] = useState('');
   const [lastScanned, setLastScanned] = useState<ParsedUnitBarcode | null>(null);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [successFlash, setSuccessFlash] = useState(false);
 
   const scannerRef = useRef<any>(null);
   const divId = useRef(`barcode-scanner-${Math.random().toString(36).substring(2)}`);
@@ -55,6 +39,8 @@ export default function BarcodeScanner({
       } catch (e) {}
       scannerRef.current = null;
     }
+    setTorchOn(false);
+    setHasTorch(false);
     setCameraOpen(false);
   }, []);
 
@@ -64,14 +50,37 @@ export default function BarcodeScanner({
     };
   }, [stopCamera]);
 
+  const toggleTorch = async () => {
+    if (!scannerRef.current) return;
+    try {
+      const nextState = !torchOn;
+      await scannerRef.current.applyVideoConstraints({
+        advanced: [{ torch: nextState }]
+      });
+      setTorchOn(nextState);
+    } catch (e) {
+      console.warn("Flashlight toggle error:", e);
+    }
+  };
+
   const handleDetected = useCallback((raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
 
+    // Silent visual flash feedback
+    setSuccessFlash(true);
+    setTimeout(() => setSuccessFlash(false), 800);
+
+    // Subtle silent haptic vibration if supported (no audio)
+    try {
+      if (typeof navigator !== 'undefined' && navigator.vibrate) {
+        navigator.vibrate(35);
+      }
+    } catch (e) {}
+
     const parsed = parseUnitBarcode(trimmed, 'retailer');
     setLastScanned(parsed);
     setInputVal(parsed.raw || trimmed);
-    playSuccessChime();
     stopCamera();
 
     if (onParsedBarcode) {
@@ -95,14 +104,60 @@ export default function BarcodeScanner({
       });
       scannerRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 20 },
-        (decodedText: string) => {
-          handleDetected(decodedText);
-        },
-        () => {}
-      );
+      // HD resolution + continuous autofocus
+      const videoConstraints: any = {
+        facingMode: 'environment',
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+        advanced: [{ focusMode: 'continuous' } as any]
+      };
+
+      const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
+        // Horizontal slot for 1D barcodes
+        const boxWidth = Math.min(viewfinderWidth * 0.9, 360);
+        return {
+          width: Math.round(boxWidth),
+          height: Math.round(boxWidth * 0.35)
+        };
+      };
+
+      try {
+        await scanner.start(
+          videoConstraints,
+          {
+            fps: 25,
+            qrbox: qrboxFunction,
+            aspectRatio: 1.777778,
+            disableFlip: false,
+          },
+          (decodedText: string) => {
+            handleDetected(decodedText);
+          },
+          () => {}
+        );
+      } catch (firstErr) {
+        // Fallback for simpler camera constraint support
+        await scanner.start(
+          { facingMode: 'environment' },
+          {
+            fps: 20,
+            qrbox: qrboxFunction,
+          },
+          (decodedText: string) => {
+            handleDetected(decodedText);
+          },
+          () => {}
+        );
+      }
+
+      // Check for torch capability
+      try {
+        const capabilities = scanner.getRunningTrackCapabilities();
+        if (capabilities && (capabilities as any).torch) {
+          setHasTorch(true);
+        }
+      } catch (e) {}
+
     } catch (err: any) {
       console.error("Barcode camera error:", err);
       setError('Camera could not be started. Please check permissions or enter barcode manually.');
@@ -111,7 +166,9 @@ export default function BarcodeScanner({
   };
 
   return (
-    <div className="space-y-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+    <div className={`space-y-3 bg-white p-4 rounded-2xl border transition-all ${
+      successFlash ? 'border-emerald-500 ring-2 ring-emerald-400/40 bg-emerald-50/20' : 'border-slate-200 shadow-xs'
+    }`}>
       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
         <div>
           <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
@@ -123,15 +180,38 @@ export default function BarcodeScanner({
           </p>
         </div>
 
-        {!cameraOpen && (
+        {!cameraOpen ? (
           <button
             type="button"
             onClick={startCamera}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
+            className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold shadow-xs flex items-center gap-1.5 transition-all"
           >
             <span>📷</span>
             <span>Open Barcode Camera</span>
           </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            {hasTorch && (
+              <button
+                type="button"
+                onClick={toggleTorch}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border flex items-center gap-1 transition-all ${
+                  torchOn
+                    ? 'bg-amber-100 text-amber-900 border-amber-300 shadow-xs'
+                    : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'
+                }`}
+              >
+                <span>{torchOn ? '🔦 Flash ON' : '💡 Flash OFF'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={stopCamera}
+              className="px-3 py-1 text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl font-medium transition-colors"
+            >
+              ✕ Close
+            </button>
+          </div>
         )}
       </div>
 
@@ -139,7 +219,7 @@ export default function BarcodeScanner({
         <div className="space-y-2.5">
           <div className="relative rounded-2xl overflow-hidden border-2 border-slate-800 bg-slate-950 shadow-inner">
             <div id={divId.current} className="w-full min-h-[240px] flex items-center justify-center">
-              <p className="text-slate-400 text-xs py-8">Starting barcode camera stream...</p>
+              <p className="text-slate-400 text-xs py-8 animate-pulse">Starting high-speed barcode sensor...</p>
             </div>
 
             {/* Red Laser Aiming Guide Line */}
@@ -152,21 +232,15 @@ export default function BarcodeScanner({
               <span className="px-2.5 py-1 rounded-full text-[11px] font-mono font-bold bg-emerald-600 text-white shadow-md">
                 🏷️ Center Barcode on Red Line
               </span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-900/80 text-slate-200 backdrop-blur-xs">
+                Silent Mode • HD
+              </span>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] text-slate-500">
-              Hold camera ~10-15cm away from the medicine bottle or strip barcode.
-            </p>
-            <button
-              type="button"
-              onClick={stopCamera}
-              className="px-3 py-1.5 text-xs text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl font-medium transition-colors"
-            >
-              Close Camera
-            </button>
-          </div>
+          <p className="text-[11px] text-slate-500 text-center">
+            Hold camera ~10-15cm away from the medicine bottle or strip barcode.
+          </p>
         </div>
       )}
 
@@ -211,3 +285,4 @@ export default function BarcodeScanner({
     </div>
   );
 }
+

@@ -32,26 +32,10 @@ interface QrScannerProps {
   scanType?: 'medicine' | 'shipment';
 }
 
-/** Play a short synthetic confirmation chime upon successful scan */
-function playSuccessChime() {
-  try {
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-    if (!AudioContextClass) return;
-    const audioCtx = new AudioContextClass();
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
-    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
-    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.25);
-  } catch (e) {}
-}
-
+/**
+ * High-Efficiency QR & Barcode Scanner with dedicated separate scanning modules.
+ * Completely silent (no audio beeps) with responsive visual capture feedback.
+ */
 export default function QrScanner({
   label,
   onScanned,
@@ -64,12 +48,15 @@ export default function QrScanner({
 }: QrScannerProps) {
   const isShipment = scanType === 'shipment';
 
-  // For medicines: Separate dedicated scanners for QR Code and Barcode
+  // For medicines: Separate dedicated scan targets
   const [activeTab, setActiveTab] = useState<'qr' | 'barcode'>('qr');
   const [cameraOpen, setCameraOpen] = useState(false);
   const [qrInput, setQrInput] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [error, setError] = useState('');
+  const [hasTorch, setHasTorch] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+  const [successFlash, setSuccessFlash] = useState(false);
 
   // Live captured states
   const [detectedQr, setDetectedQr] = useState<ParsedBatchQr | null>(null);
@@ -83,7 +70,7 @@ export default function QrScanner({
   const scannerRef = useRef<any>(null);
   const divId = useRef(`qr-scanner-${Math.random().toString(36).substring(2)}`);
 
-  // Ref tracking to avoid closure race conditions
+  // Ref tracking to avoid closure race conditions across frames
   const stateRef = useRef({
     detectedQr,
     detectedBarcode,
@@ -118,6 +105,8 @@ export default function QrScanner({
       scannerRef.current = null;
     }
     setCameraOpen(false);
+    setTorchOn(false);
+    setHasTorch(false);
   }, []);
 
   useEffect(() => {
@@ -125,6 +114,17 @@ export default function QrScanner({
       stopCamera();
     };
   }, [stopCamera]);
+
+  // Silent visual & haptic confirmation (zero audio sounds)
+  const triggerSilentSuccess = useCallback(() => {
+    setSuccessFlash(true);
+    setTimeout(() => setSuccessFlash(false), 500);
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try {
+        navigator.vibrate(35);
+      } catch (e) {}
+    }
+  }, []);
 
   // Performs final allocation to parent component
   const performAllocation = useCallback((
@@ -186,24 +186,24 @@ export default function QrScanner({
     const trimmed = raw.trim();
     if (!trimmed) return;
 
+    triggerSilentSuccess();
+
     // Shipment QR fast-path
     if (stateRef.current.isShipment) {
       setQrInput(trimmed);
-      playSuccessChime();
       stopCamera();
       stateRef.current.onScanned(trimmed);
       return;
     }
 
-    // Determine if code is from the Barcode scanner or QR scanner
+    // Determine target from active tab
     if (stateRef.current.activeTab === 'barcode') {
       const parsed = parseUnitBarcode(trimmed, 'retailer');
       setDetectedBarcode(parsed);
       setBarcodeInput(parsed.raw || trimmed);
-      playSuccessChime();
       stopCamera();
 
-      // If Batch QR is already captured, pair them immediately!
+      // If Batch QR was already captured, pair them immediately!
       if (stateRef.current.detectedQr) {
         performAllocation(stateRef.current.detectedQr, parsed, trimmed);
       }
@@ -212,17 +212,16 @@ export default function QrScanner({
       const parsed = parseBatchQr(trimmed);
       setDetectedQr(parsed);
       setQrInput(parsed.batchId || trimmed);
-      playSuccessChime();
       stopCamera();
 
-      // If Unit Barcode is already captured, pair them immediately!
+      // If Unit Barcode was already captured, pair them immediately!
       if (stateRef.current.detectedBarcode) {
         performAllocation(parsed, stateRef.current.detectedBarcode, trimmed);
       }
     }
-  }, [performAllocation, stopCamera]);
+  }, [performAllocation, stopCamera, triggerSilentSuccess]);
 
-  // Launches camera dedicated strictly to the active code type
+  // Launches high-efficiency camera dedicated strictly to the active code type
   const startCamera = async (target: 'qr' | 'barcode') => {
     setError('');
     await stopCamera();
@@ -231,9 +230,9 @@ export default function QrScanner({
     try {
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
 
-      // PURE DEDICATED FORMAT SELECTION:
-      // - QR Scanner: strictly QR_CODE (instant, sharp, zero interference)
-      // - Barcode Scanner: strictly CODE_128 (instant, focused on horizontal bars)
+      // Pure single-format selection:
+      // - QR Scanner: strictly QR_CODE
+      // - Barcode Scanner: strictly CODE_128
       const formatsToSupport = target === 'barcode'
         ? [Html5QrcodeSupportedFormats.CODE_128]
         : [Html5QrcodeSupportedFormats.QR_CODE];
@@ -241,22 +240,93 @@ export default function QrScanner({
       const scanner = new Html5Qrcode(divId.current, {
         formatsToSupport,
         verbose: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
       });
       scannerRef.current = scanner;
 
+      // High-efficiency viewfinder box tailored per format:
+      // - Barcode: horizontal wide slot (focuses on lines, filters vertical noise)
+      // - QR Code: square 1:1 box (centers matrix)
+      const qrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
+        if (target === 'barcode') {
+          return {
+            width: Math.min(Math.floor(viewfinderWidth * 0.88), 360),
+            height: Math.min(Math.floor(viewfinderHeight * 0.45), 140),
+          };
+        }
+        const edge = Math.min(viewfinderWidth, viewfinderHeight) * 0.72;
+        return {
+          width: Math.floor(edge),
+          height: Math.floor(edge),
+        };
+      };
+
+      // 720p HD resolution + continuous auto-focus for sharp line contrast
+      const cameraConfig: any = {
+        facingMode: 'environment',
+        width: { ideal: 1280, min: 640 },
+        height: { ideal: 720, min: 480 },
+        advanced: [{ focusMode: 'continuous' }],
+      };
+
       await scanner.start(
-        { facingMode: 'environment' },
-        { fps: 20 },
+        cameraConfig,
+        { fps: 20, qrbox },
         (decodedText: string) => {
           handleCodeDetected(decodedText);
         },
         () => {}
       );
+
+      // Check torch capability
+      try {
+        const capabilities = scanner.getRunningTrackCapabilities() as any;
+        setHasTorch(!!(capabilities && capabilities.torch));
+      } catch (e) {
+        setHasTorch(false);
+      }
     } catch (err: any) {
-      console.error("Camera error:", err);
-      setError('Camera could not be started. Please check camera permissions or use manual entry below.');
-      setCameraOpen(false);
+      console.warn("Primary camera start failed, attempting fallback:", err);
+      // Fallback with standard constraints
+      try {
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
+        const formatsToSupport = target === 'barcode'
+          ? [Html5QrcodeSupportedFormats.CODE_128]
+          : [Html5QrcodeSupportedFormats.QR_CODE];
+
+        const fallbackScanner = new Html5Qrcode(divId.current, {
+          formatsToSupport,
+          verbose: false,
+        });
+        scannerRef.current = fallbackScanner;
+
+        await fallbackScanner.start(
+          { facingMode: 'environment' },
+          { fps: 20 },
+          (decodedText: string) => {
+            handleCodeDetected(decodedText);
+          },
+          () => {}
+        );
+      } catch (fallbackErr: any) {
+        console.error("Camera fallback failed:", fallbackErr);
+        setError('Camera could not be accessed. Please check permissions or enter code manually.');
+        setCameraOpen(false);
+      }
     }
+  };
+
+  const toggleTorch = async () => {
+    if (!scannerRef.current || !hasTorch) return;
+    try {
+      const nextTorch = !torchOn;
+      await scannerRef.current.applyVideoConstraints({
+        advanced: [{ torch: nextTorch } as any],
+      });
+      setTorchOn(nextTorch);
+    } catch (e) {}
   };
 
   const handleManualApply = () => {
@@ -286,7 +356,7 @@ export default function QrScanner({
           <p className="text-[11px] text-slate-500">
             {isShipment
               ? "Dedicated Shipment QR Scanner (Transport parcel tracking - no barcode required)."
-              : "Separate dedicated scanners for 2D Batch QR and 1D Unit Barcode."}
+              : "Dedicated separate scanners for 2D Batch QR and 1D Unit Barcode."}
           </p>
         </div>
 
@@ -302,7 +372,7 @@ export default function QrScanner({
         )}
       </div>
 
-      {/* For Medicines: Clear Separate Tabs for QR Scanner and Barcode Scanner */}
+      {/* For Medicines: Separate Dedicated Tabs */}
       {!isShipment && (
         <div className="flex bg-slate-100 p-1 rounded-xl gap-1">
           {/* Tab 1: 2D Batch QR Scanner */}
@@ -356,7 +426,9 @@ export default function QrScanner({
       {/* Camera Live Viewfinder */}
       {cameraOpen && (
         <div className="space-y-2.5">
-          <div className="relative rounded-2xl overflow-hidden border-2 border-slate-800 bg-slate-950 shadow-inner">
+          <div className={`relative rounded-2xl overflow-hidden border-2 bg-slate-950 shadow-inner transition-colors duration-300 ${
+            successFlash ? 'border-emerald-400 ring-4 ring-emerald-400/40' : 'border-slate-800'
+          }`}>
             <div id={divId.current} className="w-full min-h-[260px] flex items-center justify-center">
               <p className="text-slate-400 text-xs py-8">Starting camera stream...</p>
             </div>
@@ -365,24 +437,31 @@ export default function QrScanner({
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-bold shadow-md ${
                 activeTab === 'barcode' && !isShipment
-                  ? 'bg-emerald-600 text-white animate-pulse'
-                  : 'bg-blue-600 text-white animate-pulse'
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-blue-600 text-white'
               }`}>
                 {isShipment
                   ? '📦 Point at Shipment QR Code'
                   : activeTab === 'barcode'
-                  ? '🏷️ Align 1D Unit Barcode Across Center'
+                  ? '🏷️ Align Barcode Within Center Box'
                   : '📦 Point at 2D Batch QR Code'}
               </span>
-              <span className="text-[10px] font-bold text-slate-300 bg-slate-900/80 px-2 py-0.5 rounded-full">
-                Instant Auto-Detect
-              </span>
+
+              {hasTorch && (
+                <button
+                  type="button"
+                  onClick={toggleTorch}
+                  className="pointer-events-auto px-2.5 py-1 bg-slate-900/90 text-amber-300 hover:text-amber-200 border border-slate-700 rounded-full text-xs font-bold shadow-sm transition-all"
+                >
+                  {torchOn ? '🔦 Flash ON' : '🔦 Flash OFF'}
+                </button>
+              )}
             </div>
 
-            {/* Visual Laser Line for Barcode Scanner */}
+            {/* Red Laser Aiming Guide for Barcode Scanner */}
             {activeTab === 'barcode' && !isShipment && (
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-4/5 h-0.5 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.9)] animate-pulse" />
+                <div className="w-3/4 h-0.5 bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)] opacity-90" />
               </div>
             )}
           </div>
@@ -390,8 +469,8 @@ export default function QrScanner({
           <div className="flex items-center justify-between gap-2">
             <p className="text-[11px] text-slate-500">
               {activeTab === 'barcode'
-                ? 'Position the horizontal lines of the barcode inside the camera view.'
-                : 'Hold the 2D QR square steady in front of the lens.'}
+                ? 'Center the barcode lines inside the horizontal targeting box.'
+                : 'Hold the QR code steady in front of the lens.'}
             </p>
             <button
               type="button"
@@ -409,7 +488,6 @@ export default function QrScanner({
       {/* Dedicated Scanner Launchers & Inputs */}
       {!cameraOpen && (
         <div className="space-y-3">
-          {/* Active Scanner Sub-Module */}
           {(isShipment || activeTab === 'qr') ? (
             /* 📦 Dedicated QR Scanner View */
             <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-200/80 space-y-2.5">
