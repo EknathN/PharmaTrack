@@ -2,6 +2,7 @@ import { getBatchDetail } from "@/app/actions/batches";
 import { notFound } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import Link from "next/link";
+import BatchRectificationCard from "@/components/BatchRectificationCard";
 
 export default async function BatchDetailPage({ params }: { params: { id: string } }) {
   const data = await getBatchDetail(params.id);
@@ -23,11 +24,23 @@ export default async function BatchDetailPage({ params }: { params: { id: string
           </div>
         </div>
         <div className="flex gap-2">
-          <Link href={`/manufacturer/shipments/new?batchId=${batch.id}`} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
-            Ship This Batch →
-          </Link>
+          {!batch.isFrozen && (
+            <Link href={`/manufacturer/shipments/new?batchId=${batch.id}`} className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 transition-colors">
+              Ship This Batch →
+            </Link>
+          )}
         </div>
       </div>
+
+      {batch.isFrozen && (
+        <BatchRectificationCard
+          batchId={batch.id}
+          batchNumber={batch.batchNumber}
+          medicineName={batch.medicineName}
+          freezeReason={batch.freezeReason}
+          hasPendingRectification={batch.hasPendingRectification}
+        />
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Batch Details (immutable) */}

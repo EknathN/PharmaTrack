@@ -341,9 +341,15 @@ export default function ProofInspectionsClient({ initialData }: ProofInspections
                       {proof.uploaderRole}
                     </span>
                     {proof.isFrozen && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-600 text-white shadow-xs">
-                        ❄️ FROZEN HOLD
-                      </span>
+                      proof.hasPendingRectification ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-600 text-white shadow-xs animate-pulse">
+                          ⚡ APPEAL PENDING
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-600 text-white shadow-xs">
+                          ❄️ FROZEN HOLD
+                        </span>
+                      )
                     )}
                   </div>
 
@@ -426,19 +432,41 @@ export default function ProofInspectionsClient({ initialData }: ProofInspections
                   </button>
                 )}
 
-                {proof.batchId && !proof.isFrozen && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFreezeModalProof(proof);
-                      setFreezeReason(`Fraudulent / reused proof photo detected in consignment ${proof.shipmentNumber || proof.entityId.slice(0, 8)}`);
-                    }}
-                    className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1"
-                    title="Freeze associated batch immediately"
-                  >
-                    <span>🚨</span>
-                    <span>Freeze</span>
-                  </button>
+                {proof.batchId && (
+                  proof.isFrozen ? (
+                    proof.hasPendingRectification ? (
+                      <Link
+                        href="/host/security"
+                        className="py-2 px-3 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1 shadow-xs animate-pulse whitespace-nowrap"
+                        title="Rectification proof appeal submitted - click to review and re-verify"
+                      >
+                        <span>⚡</span>
+                        <span>Review Appeal</span>
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/host/security"
+                        className="py-2 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1 whitespace-nowrap"
+                        title="Inspect regulatory freeze hold"
+                      >
+                        <span>❄️</span>
+                        <span>Hold Active</span>
+                      </Link>
+                    )
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFreezeModalProof(proof);
+                        setFreezeReason(`Fraudulent / reused proof photo detected in consignment ${proof.shipmentNumber || proof.entityId.slice(0, 8)}`);
+                      }}
+                      className="py-2 px-3 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 text-xs font-bold rounded-xl transition-colors flex items-center gap-1"
+                      title="Freeze associated batch immediately"
+                    >
+                      <span>🚨</span>
+                      <span>Freeze</span>
+                    </button>
+                  )
                 )}
 
                 {proof.verificationStatus === 'verified' ? (

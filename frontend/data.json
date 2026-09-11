@@ -92,11 +92,501 @@
       "licenseNumber": "CDSCO/HQ/2019/0001"
     }
   ],
-  "batches": [],
-  "inventory": [],
-  "shipments": [],
+  "batches": [
+    {
+      "id": "BAT-e762c042",
+      "batchNumber": "BN-202609-1803",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "medicineType": "tablet",
+      "mfgDate": "2026-09-10",
+      "expDate": "2026-09-12",
+      "totalQuantity": 100,
+      "unitDetails": "30 Tablets/ strap",
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "Manufacturer: Apex Pharmaceuticals Ltd\nMedicine: paracetamol (Dolo-650 mg)\nBatch No: BN-202609-1803\nMfg Date: 10-09-2026\nExp Date: 12-09-2026\nStrips: 30 Tablets/ strap\nTotal Quantity: 100 units\nBatch ID: BAT-e762c042",
+      "manufacturerId": "seed-manufacturer-01",
+      "manufacturerName": "Apex Pharmaceuticals Ltd",
+      "status": "fully_disposed",
+      "history": [
+        {
+          "timestamp": "2026-09-10T23:43:57.430Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Batch Created",
+          "details": "100 units created. Batch locked permanently."
+        },
+        {
+          "timestamp": "2026-09-10T23:51:03.423Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Shipment Created → EcoSafe Bio-Disposal Inc (disposer)",
+          "details": "Shipment #DSP-5612331, Qty: 100. OCG Security Key: OCG-SEC-816F-64AD-8F72"
+        },
+        {
+          "timestamp": "2026-09-10T23:51:16.978Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Dispatch Confirmed — In Transit",
+          "details": "Courier POD & OCG Sheet uploaded (OCG: OCG-SEC-816F-64AD-8F72). Order alignment verified. Shipment #DSP-5612331 now in transit to EcoSafe Bio-Disposal Inc."
+        },
+        {
+          "timestamp": "2026-09-10T23:51:44.229Z",
+          "actorId": "seed-disposer-01",
+          "actorName": "EcoSafe Bio-Disposal Inc",
+          "actorRole": "disposer",
+          "event": "Received by disposer — EcoSafe Bio-Disposal Inc",
+          "details": "100 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-10T23:52:44.396Z",
+          "actorId": "seed-disposer-01",
+          "actorName": "EcoSafe Bio-Disposal Inc",
+          "actorRole": "disposer",
+          "event": "FULLY DISPOSED ✓",
+          "details": "Safe disposal completed by EcoSafe Bio-Disposal Inc. Official Certificate #CERT-DISP-66604AE6 and photo/video proofs recorded."
+        },
+        {
+          "timestamp": "2026-09-10T23:56:47.594Z",
+          "actorId": "seed-host-01",
+          "actorName": "Central Drug Regulatory Authority (Host Control)",
+          "actorRole": "host",
+          "event": "REGULATORY FREEZE (PROOF FRAUD INVESTIGATION)",
+          "details": "Fraudulent / reused proof photo detected in consignment 66604ae6"
+        },
+        {
+          "timestamp": "2026-09-11T00:03:36.189Z",
+          "actorId": "seed-host-01",
+          "actorName": "Central Drug Regulatory Authority (Host Control)",
+          "actorRole": "host",
+          "event": "REGULATORY FREEZE LIFTED",
+          "details": "Regulatory freeze removed by Central Drug Regulatory Authority (Host Control). Remarks: \"Compliance verification complete; freeze lifted.\". (Previous hold reason: \"FRAUD INVESTIGATION: Fraudulent / reused proof photo detected in consignment 66604ae6\")"
+        },
+        {
+          "timestamp": "2026-09-11T00:05:14.428Z",
+          "actorId": "seed-host-01",
+          "actorName": "Central Drug Regulatory Authority (Host Control)",
+          "actorRole": "host",
+          "event": "REGULATORY FREEZE LIFTED",
+          "details": "Regulatory freeze removed by Central Drug Regulatory Authority (Host Control). Remarks: \"Compliance verification complete; freeze lifted.\". (Previous hold reason: \"undefined\")"
+        },
+        {
+          "timestamp": "2026-09-11T00:05:15.713Z",
+          "actorId": "seed-host-01",
+          "actorName": "Central Drug Regulatory Authority (Host Control)",
+          "actorRole": "host",
+          "event": "REGULATORY FREEZE APPLIED",
+          "details": "Batch frozen by Central Drug Regulatory Authority (Host Control). Reason: \"Regulatory Hold from Host Dashboard\". All movements, dispatches, intakes, and sales are blocked."
+        },
+        {
+          "timestamp": "2026-09-11T00:05:17.743Z",
+          "actorId": "seed-host-01",
+          "actorName": "Central Drug Regulatory Authority (Host Control)",
+          "actorRole": "host",
+          "event": "REGULATORY FREEZE LIFTED",
+          "details": "Regulatory freeze removed by Central Drug Regulatory Authority (Host Control). Remarks: \"Compliance verification complete; freeze lifted.\". (Previous hold reason: \"Regulatory Hold from Host Dashboard\")"
+        }
+      ],
+      "createdAt": "2026-09-10T23:43:57.430Z",
+      "isFrozen": false,
+      "frozenAt": "2026-09-11T00:05:15.713Z",
+      "frozenBy": "Central Drug Regulatory Authority (Host Control)"
+    },
+    {
+      "id": "BAT-1744c2e8",
+      "batchNumber": "BN-202609-7019",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "medicineType": "tablet",
+      "mfgDate": "2026-09-10",
+      "expDate": "2028-09-11",
+      "totalQuantity": 100,
+      "unitDetails": "30 Tablets/ strap",
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "Manufacturer: Apex Pharmaceuticals Ltd\nMedicine: paracetamol (Dolo-650 mg)\nBatch No: BN-202609-7019\nMfg Date: 10-09-2026\nExp Date: 11-09-2028\nStrips: 30 Tablets/ strap\nTotal Quantity: 100 units\nBatch ID: BAT-1744c2e8",
+      "manufacturerId": "seed-manufacturer-01",
+      "manufacturerName": "Apex Pharmaceuticals Ltd",
+      "status": "in_stock",
+      "history": [
+        {
+          "timestamp": "2026-09-10T23:45:32.720Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Batch Created",
+          "details": "100 units created. Batch locked permanently."
+        },
+        {
+          "timestamp": "2026-09-10T23:46:28.470Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Shipment Created → Global Pharma Logistics (distributor)",
+          "details": "Shipment #SHP-5480935, Qty: 100. OCG Security Key: OCG-SEC-4710-C8BC-E1BF"
+        },
+        {
+          "timestamp": "2026-09-10T23:46:46.504Z",
+          "actorId": "seed-manufacturer-01",
+          "actorName": "Apex Pharmaceuticals Ltd",
+          "actorRole": "manufacturer",
+          "event": "Dispatch Confirmed — In Transit",
+          "details": "Courier POD & OCG Sheet uploaded (OCG: OCG-SEC-4710-C8BC-E1BF). Order alignment verified. Shipment #SHP-5480935 now in transit to Global Pharma Logistics."
+        },
+        {
+          "timestamp": "2026-09-10T23:47:53.264Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Received by distributor — Global Pharma Logistics",
+          "details": "100 units received. Proof uploaded. Inventory updated."
+        },
+        {
+          "timestamp": "2026-09-10T23:48:12.698Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Shipment Created → City Care Pharmacy (retailer)",
+          "details": "Shipment #SHP-5499176, Qty: 100. OCG Security Key: OCG-SEC-5363-2701-D780"
+        },
+        {
+          "timestamp": "2026-09-10T23:48:29.468Z",
+          "actorId": "seed-distributor-01",
+          "actorName": "Global Pharma Logistics",
+          "actorRole": "distributor",
+          "event": "Dispatch Confirmed — In Transit",
+          "details": "Courier POD & OCG Sheet uploaded (OCG: OCG-SEC-5363-2701-D780). Order alignment verified. Shipment #SHP-5499176 now in transit to City Care Pharmacy."
+        },
+        {
+          "timestamp": "2026-09-10T23:49:53.996Z",
+          "actorId": "seed-retailer-01",
+          "actorName": "City Care Pharmacy",
+          "actorRole": "retailer",
+          "event": "Received by retailer — City Care Pharmacy",
+          "details": "100 units received. Proof uploaded. Inventory updated."
+        }
+      ],
+      "createdAt": "2026-09-10T23:45:32.720Z"
+    }
+  ],
+  "inventory": [
+    {
+      "id": "162afc29-dac9-4185-b252-95a50b951f29",
+      "batchId": "BAT-1744c2e8",
+      "ownerId": "seed-retailer-01",
+      "ownerRole": "retailer",
+      "quantity": 100,
+      "status": "in_stock"
+    }
+  ],
+  "shipments": [
+    {
+      "id": "9ed791d5-1f9b-4b80-820f-d3587b70b7b8",
+      "shipmentNumber": "SHP-5480935",
+      "type": "forward",
+      "fromId": "seed-manufacturer-01",
+      "fromRole": "manufacturer",
+      "fromName": "Apex Pharmaceuticals Ltd",
+      "fromAddress": "Plot 18-20, MIDC Industrial Area, Phase II, Turbhe, Navi Mumbai, Maharashtra, 400705",
+      "toId": "seed-distributor-01",
+      "toRole": "distributor",
+      "toName": "Global Pharma Logistics",
+      "toAddress": "Central Warehouse Complex, Hub #4, Bhiwandi Road, Thane, Maharashtra, 421302",
+      "batchId": "BAT-1744c2e8",
+      "quantity": 100,
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "PHARMATRACK:SHIPMENT:9ed791d5-1f9b-4b80-820f-d3587b70b7b8",
+      "status": "received",
+      "ocgVerificationCode": "OCG-SEC-4710-C8BC-E1BF",
+      "notes": "",
+      "createdAt": "2026-09-10T23:46:28.470Z",
+      "updatedAt": "2026-09-10T23:47:53.264Z",
+      "senderProofUrl": "/uploads/1789083999887-bww8m3e.png",
+      "senderOcgProofUrl": "/uploads/1789084003694-9mawohc.png",
+      "receiverProofUrl": "/uploads/1789084065911-lwb2zqs.png",
+      "receiverOcgProofUrl": "/uploads/1789084071035-w3rsf45.png"
+    },
+    {
+      "id": "88831802-ccb0-4860-bead-911aa1e23a40",
+      "shipmentNumber": "SHP-5499176",
+      "type": "forward",
+      "fromId": "seed-distributor-01",
+      "fromRole": "distributor",
+      "fromName": "Global Pharma Logistics",
+      "fromAddress": "Central Warehouse Complex, Hub #4, Bhiwandi Road, Thane, Maharashtra, 421302",
+      "toId": "seed-retailer-01",
+      "toRole": "retailer",
+      "toName": "City Care Pharmacy",
+      "toAddress": "Shop 4 & 5, Sunshine Heights, SV Road, Andheri West, Mumbai, Maharashtra, 400058",
+      "batchId": "BAT-1744c2e8",
+      "quantity": 100,
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "PHARMATRACK:SHIPMENT:88831802-ccb0-4860-bead-911aa1e23a40",
+      "status": "received",
+      "ocgVerificationCode": "OCG-SEC-5363-2701-D780",
+      "notes": null,
+      "createdAt": "2026-09-10T23:48:12.698Z",
+      "updatedAt": "2026-09-10T23:49:53.996Z",
+      "senderProofUrl": "/uploads/1789084102778-0ve5kj7.png",
+      "senderOcgProofUrl": "/uploads/1789084107278-wlquf5h.png",
+      "receiverProofUrl": "/uploads/1789084187869-au29op0.png",
+      "receiverOcgProofUrl": "/uploads/1789084191685-ukhrfee.png"
+    },
+    {
+      "id": "4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "shipmentNumber": "DSP-5612331",
+      "type": "disposal",
+      "fromId": "seed-manufacturer-01",
+      "fromRole": "manufacturer",
+      "fromName": "Apex Pharmaceuticals Ltd",
+      "fromAddress": "Plot 18-20, MIDC Industrial Area, Phase II, Turbhe, Navi Mumbai, Maharashtra, 400705",
+      "toId": "seed-disposer-01",
+      "toRole": "disposer",
+      "toName": "EcoSafe Bio-Disposal Inc",
+      "toAddress": "Bio-Hazard Processing Zone, Sector 9, CETP Plant, Taloja, Raigad, Maharashtra, 410208",
+      "batchId": "BAT-e762c042",
+      "quantity": 100,
+      "qrCode": "data:image/png;base64,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",
+      "qrData": "PHARMATRACK:SHIPMENT:4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "status": "received",
+      "ocgVerificationCode": "OCG-SEC-816F-64AD-8F72",
+      "notes": "",
+      "createdAt": "2026-09-10T23:51:03.423Z",
+      "updatedAt": "2026-09-10T23:51:44.229Z",
+      "senderProofUrl": "/uploads/1789084268510-3gid1fy.png",
+      "senderOcgProofUrl": "/uploads/1789084273999-7yv4g18.png",
+      "receiverProofUrl": "/uploads/1789084297907-p7ppu4e.png",
+      "receiverOcgProofUrl": "/uploads/1789084302005-1v1yocf.png"
+    }
+  ],
   "sales": [],
-  "disposalRecords": [],
-  "alerts": [],
-  "restockOrders": []
+  "disposalRecords": [
+    {
+      "id": "66604ae6-72e1-4c6f-95f9-68894b3eaf1b",
+      "batchId": "BAT-e762c042",
+      "shipmentId": "4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "disposerId": "seed-disposer-01",
+      "disposerName": "EcoSafe Bio-Disposal Inc",
+      "quantity": 100,
+      "status": "completed",
+      "createdAt": "2026-09-10T23:51:44.229Z",
+      "photoBeforeUrl": "/uploads/1789084316361-97pujhm.png",
+      "photoAfterUrl": "/uploads/1789084321784-m8hs27h.png",
+      "videoUrl": "/uploads/1789084353384-010tp3d.mp4",
+      "certificateUrl": "/disposals/66604ae6-72e1-4c6f-95f9-68894b3eaf1b/certificate",
+      "certificateNumber": "CERT-DISP-66604AE6",
+      "disposalMethod": "High-Temperature Incineration (1100°C) & Bio-Thermal Neutralization",
+      "officerName": "EcoSafe Bio-Disposal Inc",
+      "certificateNotes": "Consignment verified against manufacturer batch manifest. Batch destroyed completely without hazardous residue.",
+      "completedAt": "2026-09-10T23:52:44.396Z"
+    }
+  ],
+  "alerts": [
+    {
+      "id": "62107256-bf8b-48fd-b8e3-078494cdff68",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "Batch BN-202609-1803 (paracetamol (Dolo-650 mg)) created with 100 units. QR code generated.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:43:57.430Z"
+    },
+    {
+      "id": "5e5d85ba-30d1-4ca1-af7c-54d32fdeee0d",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-1744c2e8",
+      "message": "Batch BN-202609-7019 (paracetamol (Dolo-650 mg)) created with 100 units. QR code generated.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:45:32.720Z"
+    },
+    {
+      "id": "01d8c263-6a8c-4767-8aa3-a029133626bc",
+      "userId": "seed-distributor-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "9ed791d5-1f9b-4b80-820f-d3587b70b7b8",
+      "message": "Shipment #SHP-5480935 from Apex Pharmaceuticals Ltd is now in transit with verified OCG Gatepass.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:46:46.504Z"
+    },
+    {
+      "id": "de5be236-e850-4808-8391-c7b8fc3b1d77",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "9ed791d5-1f9b-4b80-820f-d3587b70b7b8",
+      "message": "Shipment #SHP-5480935 received by Global Pharma Logistics. 100 units confirmed.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:47:53.264Z"
+    },
+    {
+      "id": "44012010-aaf2-47ec-858b-0338600a3f04",
+      "userId": "seed-distributor-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "9ed791d5-1f9b-4b80-820f-d3587b70b7b8",
+      "message": "You received 100 units of paracetamol (Dolo-650 mg) (BN-202609-7019). Stock added to inventory.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:47:53.264Z"
+    },
+    {
+      "id": "8c27560b-062d-481d-90e4-6bd38828d0a4",
+      "userId": "seed-retailer-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "88831802-ccb0-4860-bead-911aa1e23a40",
+      "message": "Shipment #SHP-5499176 from Global Pharma Logistics is now in transit with verified OCG Gatepass.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:48:29.468Z"
+    },
+    {
+      "id": "dd2f84c2-f959-4829-8fc1-aedef6043c25",
+      "userId": "seed-manufacturer-01",
+      "message": "📦 New Purchase Order RO-149642-466: 200 units of paracetamol (Dolo-650 mg) requested by Global Pharma Logistics (distributor).",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:49:09.642Z"
+    },
+    {
+      "id": "0ee3fb33-6c19-47c3-9bfa-b7d7ac1f8dc9",
+      "userId": "seed-distributor-01",
+      "message": "✅ Purchase Order RO-149642-466 placed for 200 units of paracetamol (Dolo-650 mg) to Apex Pharmaceuticals Ltd. Status: restock_pending.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:49:09.642Z"
+    },
+    {
+      "id": "1e010d16-2d19-4c36-a2d2-d44590d16ef1",
+      "userId": "seed-distributor-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "88831802-ccb0-4860-bead-911aa1e23a40",
+      "message": "Shipment #SHP-5499176 received by City Care Pharmacy. 100 units confirmed.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:49:53.997Z"
+    },
+    {
+      "id": "a69b28a7-13e0-4983-8e79-609e0c0f0f44",
+      "userId": "seed-retailer-01",
+      "batchId": "BAT-1744c2e8",
+      "shipmentId": "88831802-ccb0-4860-bead-911aa1e23a40",
+      "message": "You received 100 units of paracetamol (Dolo-650 mg) (BN-202609-7019). Stock added to inventory.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:49:53.997Z"
+    },
+    {
+      "id": "724b0377-72ad-4799-8aae-c1a3c5e8bd4a",
+      "userId": "seed-distributor-01",
+      "message": "📦 Purchase Order RO-149642-466 for 200 units of paracetamol (Dolo-650 mg) has been DISPATCHED by Apex Pharmaceuticals Ltd via Shipment #DSP-5612331.",
+      "type": "info",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:51:03.424Z"
+    },
+    {
+      "id": "4ea2db79-6223-4076-8332-ca05d6f9eab2",
+      "userId": "seed-disposer-01",
+      "batchId": "BAT-e762c042",
+      "shipmentId": "4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "message": "Shipment #DSP-5612331 from Apex Pharmaceuticals Ltd is now in transit with verified OCG Gatepass.",
+      "type": "warning",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:51:16.978Z"
+    },
+    {
+      "id": "1bcabb80-9fe5-4b58-9854-03929bde55e6",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "shipmentId": "4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "message": "Shipment #DSP-5612331 received by EcoSafe Bio-Disposal Inc. 100 units confirmed.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:51:44.229Z"
+    },
+    {
+      "id": "3ee4b2ec-ff33-4219-931e-dc67c63ecc6d",
+      "userId": "seed-disposer-01",
+      "batchId": "BAT-e762c042",
+      "shipmentId": "4ba08a60-dfaf-4358-a6d9-6ebfb6cb721f",
+      "message": "You received 100 units of paracetamol (Dolo-650 mg) (BN-202609-1803). Stock added to inventory.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:51:44.229Z"
+    },
+    {
+      "id": "773e7653-a283-433f-9270-d971c65c761b",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "Batch BN-202609-1803 (paracetamol (Dolo-650 mg)) has been safely disposed by EcoSafe Bio-Disposal Inc. Official Disposal Certificate #CERT-DISP-66604AE6 is now available.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:52:44.396Z"
+    },
+    {
+      "id": "f47a7a91-4762-4710-b7ff-9edd92a11624",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "🚨 EMERGENCY FREEZE: Batch BN-202609-1803 has been FROZEN due to suspected proof tampering/fraud: Fraudulent / reused proof photo detected in consignment 66604ae6",
+      "type": "danger",
+      "isRead": false,
+      "createdAt": "2026-09-10T23:56:47.595Z"
+    },
+    {
+      "id": "39719586-3cb6-42a5-825d-88d8e6cb3aae",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "STATUS RESTORED: Freeze on batch BN-202609-1803 (paracetamol (Dolo-650 mg)) has been lifted by Regulatory Authority. Normal operations may resume.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-11T00:03:36.189Z"
+    },
+    {
+      "id": "014d654d-4133-447f-99ce-37d8cf3f676e",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "STATUS RESTORED: Freeze on batch BN-202609-1803 (paracetamol (Dolo-650 mg)) has been lifted by Regulatory Authority. Normal operations may resume.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-11T00:05:14.429Z"
+    },
+    {
+      "id": "87658b14-257a-46e9-b672-b07d0f8b8153",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "EMERGENCY: Batch BN-202609-1803 (paracetamol (Dolo-650 mg)) has been FROZEN by Regulatory Authority. Reason: Regulatory Hold from Host Dashboard",
+      "type": "danger",
+      "isRead": false,
+      "createdAt": "2026-09-11T00:05:15.713Z"
+    },
+    {
+      "id": "ce9aa310-4594-4cf9-8e5a-dff1148b659c",
+      "userId": "seed-manufacturer-01",
+      "batchId": "BAT-e762c042",
+      "message": "STATUS RESTORED: Freeze on batch BN-202609-1803 (paracetamol (Dolo-650 mg)) has been lifted by Regulatory Authority. Normal operations may resume.",
+      "type": "success",
+      "isRead": false,
+      "createdAt": "2026-09-11T00:05:17.743Z"
+    }
+  ],
+  "restockOrders": [
+    {
+      "id": "bcf4a5e4-59c2-454f-89e7-39390eba8950",
+      "orderNumber": "RO-149642-466",
+      "buyerId": "seed-distributor-01",
+      "buyerRole": "distributor",
+      "buyerName": "Global Pharma Logistics",
+      "supplierId": "seed-manufacturer-01",
+      "supplierRole": "manufacturer",
+      "supplierName": "Apex Pharmaceuticals Ltd",
+      "medicineName": "paracetamol (Dolo-650 mg)",
+      "quantity": 200,
+      "priority": "urgent",
+      "notes": "Distributor replenishment based on retail demand velocity. · Fulfilled via Shipment #DSP-5612331",
+      "status": "shipped",
+      "createdAt": "2026-09-10T23:49:09.642Z",
+      "updatedAt": "2026-09-10T23:51:03.423Z"
+    }
+  ],
+  "rectificationRequests": []
 }

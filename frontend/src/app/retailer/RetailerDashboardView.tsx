@@ -5,6 +5,7 @@ import { useRetailerLanguage } from "@/context/RetailerLanguageContext";
 import RetailerStatusBadge from "@/components/RetailerStatusBadge";
 import SmartRestockWidget from "@/components/SmartRestockWidget";
 import { cancelReturnShipment } from "@/app/actions/shipments";
+import BatchRectificationCard from "@/components/BatchRectificationCard";
 
 interface RetailerDashboardViewProps {
   inventory: any[];
@@ -26,6 +27,7 @@ export default function RetailerDashboardView({
   smartRestockRecommendations = [],
 }: RetailerDashboardViewProps) {
   const { t } = useRetailerLanguage();
+  const frozenItems = inventory.filter((i: any) => i.batch?.isFrozen);
 
   return (
     <div className="space-y-6">
@@ -60,6 +62,22 @@ export default function RetailerDashboardView({
           </Link>
         </div>
       </div>
+
+      {/* Action Required: Frozen Inventory Under Regulatory Hold */}
+      {frozenItems.length > 0 && (
+        <div className="space-y-3">
+          {frozenItems.map((item: any) => (
+            <BatchRectificationCard
+              key={item.batchId}
+              batchId={item.batchId}
+              batchNumber={item.batch?.batchNumber || item.batchId}
+              medicineName={item.batch?.medicineName || 'Medicine'}
+              freezeReason={item.batch?.freezeReason}
+              hasPendingRectification={item.batch?.hasPendingRectification}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Near-Expiry Alert Banner */}
       {nearExpiry.length > 0 && (

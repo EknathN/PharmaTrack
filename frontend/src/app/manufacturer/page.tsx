@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getManufacturerDashboard } from "@/app/actions/batches";
 import { redirect } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import BatchRectificationCard from "@/components/BatchRectificationCard";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,22 +12,23 @@ export default async function ManufacturerDashboard() {
   if (!data) redirect('/login');
 
   const { batches, stats, alerts, shipments, incomingReturns = [], incomingOrders = [] } = data;
+  const frozenBatches = batches.filter(b => b.isFrozen);
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Manufacturer Dashboard</h1>
-          <p className="text-slate-500 text-sm">Full supply chain visibility from your manufacturing plant.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Manufacturer Operations</h1>
+          <p className="text-slate-500 text-sm">Batch minting, cryptographic QR generation, and distribution control.</p>
         </div>
-        <div className="flex gap-2 items-center">
-          <a href="/manufacturer" className="px-3 py-2 bg-slate-100 text-slate-700 text-sm font-medium rounded-xl hover:bg-slate-200 transition-colors flex items-center gap-1.5" title="Refresh dashboard">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Link href="/manufacturer/disposal/new" className="px-4 py-2 bg-orange-600 text-white font-medium rounded-xl hover:bg-orange-700 transition-colors shadow-sm flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            Dispose Expired
+          </Link>
+          <Link href="/manufacturer/returns" className="px-4 py-2 bg-slate-100 text-slate-700 font-medium rounded-xl hover:bg-slate-200 transition-colors flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            Refresh
-          </a>
-          <Link href="/manufacturer/receive" className="px-3.5 py-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 text-sm font-semibold rounded-xl transition-colors flex items-center gap-1.5">
-            <span>📦</span>
             <span>Receive Returns {incomingReturns.length > 0 && `(${incomingReturns.length})`}</span>
           </Link>
           <Link href="/manufacturer/batches/new" className="px-4 py-2 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2">
@@ -35,6 +37,22 @@ export default async function ManufacturerDashboard() {
           </Link>
         </div>
       </div>
+
+      {/* Action Required: Frozen Batches Under Regulatory Hold */}
+      {frozenBatches.length > 0 && (
+        <div className="space-y-3">
+          {frozenBatches.map(b => (
+            <BatchRectificationCard
+              key={b.id}
+              batchId={b.id}
+              batchNumber={b.batchNumber}
+              medicineName={b.medicineName}
+              freezeReason={b.freezeReason}
+              hasPendingRectification={b.hasPendingRectification}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Incoming Procurement Orders from Distributors */}
       {incomingOrders && incomingOrders.length > 0 && (

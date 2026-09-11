@@ -37,6 +37,7 @@ export interface InspectionProofItem {
   fraudAlertMessage?: string;
   isFrozen?: boolean;
   isFlagged?: boolean;
+  hasPendingRectification?: boolean;
   verificationStatus: 'verified' | 'suspect' | 'pending';
 }
 
@@ -82,6 +83,7 @@ export async function getProofInspections() {
         createdAt: s.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -114,6 +116,7 @@ export async function getProofInspections() {
         createdAt: s.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -146,6 +149,7 @@ export async function getProofInspections() {
         createdAt: s.updatedAt || s.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -178,6 +182,7 @@ export async function getProofInspections() {
         createdAt: s.updatedAt || s.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -211,6 +216,7 @@ export async function getProofInspections() {
         createdAt: d.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -238,6 +244,7 @@ export async function getProofInspections() {
         createdAt: d.completedAt || d.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -262,6 +269,7 @@ export async function getProofInspections() {
         createdAt: d.completedAt || d.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }
@@ -286,6 +294,7 @@ export async function getProofInspections() {
         createdAt: d.completedAt || d.createdAt,
         isFrozen: batch?.isFrozen,
         isFlagged: batch?.isFlagged,
+        hasPendingRectification: batch?.hasPendingRectification,
         verificationStatus: batch?.isFrozen ? 'suspect' : 'pending'
       });
     }

@@ -4,6 +4,7 @@ import { getSmartRestockRecommendations } from "@/app/actions/restock";
 import { redirect } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import SmartRestockWidget from "@/components/SmartRestockWidget";
+import BatchRectificationCard from "@/components/BatchRectificationCard";
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -14,6 +15,7 @@ export default async function DistributorDashboard() {
 
   const { inventory, incomingShipments, outgoingShipments, alerts, incomingOrders = [] } = data;
   const pendingReceipts = incomingShipments.filter((s: any) => s.status !== 'received');
+  const frozenItems = inventory.filter((i: any) => i.batch?.isFrozen);
 
   // Fetch predictive smart restock recommendations based on wholesale velocity
   const smartRestockRecommendations = await getSmartRestockRecommendations(14);
@@ -34,6 +36,22 @@ export default async function DistributorDashboard() {
           <Link href="/distributor/shipments/new" className="px-4 py-2 bg-violet-600 text-white text-sm font-medium rounded-xl hover:bg-violet-700 transition-colors">Ship to Retailer</Link>
         </div>
       </div>
+
+      {/* Action Required: Frozen Inventory Under Regulatory Hold */}
+      {frozenItems.length > 0 && (
+        <div className="space-y-3">
+          {frozenItems.map((item: any) => (
+            <BatchRectificationCard
+              key={item.batchId}
+              batchId={item.batchId}
+              batchNumber={item.batch?.batchNumber || item.batchId}
+              medicineName={item.batch?.medicineName || 'Medicine'}
+              freezeReason={item.batch?.freezeReason}
+              hasPendingRectification={item.batch?.hasPendingRectification}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Incoming Purchase Orders from Retailers */}
       {incomingOrders && incomingOrders.length > 0 && (

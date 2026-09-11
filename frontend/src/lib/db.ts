@@ -45,6 +45,8 @@ export interface Batch {
   flagReason?: string;
   flaggedAt?: string;
   flaggedBy?: string;
+  hasPendingRectification?: boolean;
+  latestRectificationId?: string;
   history: HistoryEvent[];
   createdAt: string;
 }
@@ -154,6 +156,25 @@ export interface RestockOrder {
   updatedAt: string;
 }
 
+export interface RectificationRequest {
+  id: string;
+  batchId: string;
+  batchNumber: string;
+  medicineName: string;
+  requesterId: string;
+  requesterName: string;
+  requesterRole: Role;
+  reasonForHold: string;
+  appealNotes: string;
+  rectifiedProofUrl: string;
+  rectifiedOcgUrl?: string;
+  status: 'pending_review' | 'approved_reverified' | 'rejected';
+  submittedAt: string;
+  reviewedAt?: string;
+  reviewedBy?: string;
+  reviewRemarks?: string;
+}
+
 export interface DatabaseSchema {
   users: User[];
   batches: Batch[];
@@ -163,6 +184,7 @@ export interface DatabaseSchema {
   disposalRecords: DisposalRecord[];
   alerts: Alert[];
   restockOrders: RestockOrder[];
+  rectificationRequests?: RectificationRequest[];
 }
 
 // Find real path of data.json regardless of where node was launched
@@ -242,7 +264,8 @@ function getEmptyDb(): DatabaseSchema {
     sales: [],
     disposalRecords: [],
     alerts: [],
-    restockOrders: []
+    restockOrders: [],
+    rectificationRequests: []
   };
 }
 
@@ -279,6 +302,7 @@ export async function readDb(): Promise<DatabaseSchema> {
           if (!Array.isArray(parsed.disposalRecords)) parsed.disposalRecords = [];
           if (!Array.isArray(parsed.alerts)) parsed.alerts = [];
           if (!Array.isArray(parsed.restockOrders)) parsed.restockOrders = [];
+          if (!Array.isArray(parsed.rectificationRequests)) parsed.rectificationRequests = [];
 
           for (const seedUser of SEED_USERS) {
             if (!parsed.users.some(u => u.email.toLowerCase() === seedUser.email.toLowerCase())) {
