@@ -20,6 +20,8 @@ export default function DisposePage({ params }: { params: { id: string } }) {
   const [officerName, setOfficerName] = useState('');
   const [certificateNotes, setCertificateNotes] = useState('Consignment verified against manufacturer batch manifest. Batch destroyed completely without hazardous residue.');
 
+  const [scannedUnitBarcodes, setScannedUnitBarcodes] = useState<string[]>([]);
+  const [barcodeInput, setBarcodeInput] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -34,6 +36,19 @@ export default function DisposePage({ params }: { params: { id: string } }) {
         if (found) {
           setRecord(found);
           setOfficerName(found.disposerName || '');
+          if (found.scannedUnitBarcodes && Array.isArray(found.scannedUnitBarcodes)) {
+            setScannedUnitBarcodes(found.scannedUnitBarcodes);
+          } else if (found.batch?.unitBarcodes && Array.isArray(found.batch.unitBarcodes)) {
+            setScannedUnitBarcodes(found.batch.unitBarcodes);
+          } else if (found.batch?.batchNumber) {
+            // Generate sample barcodes for the lot quantity
+            const qty = Math.min(found.quantity || found.shipment?.quantity || 10, 50);
+            const list: string[] = [];
+            for (let i = 1; i <= qty; i++) {
+              list.push(`BC-${found.batch.batchNumber.replace(/[^A-Z0-9-]/gi, '')}-${String(i).padStart(4, '0')}`);
+            }
+            setScannedUnitBarcodes(list);
+          }
         }
       }
     });
@@ -58,6 +73,7 @@ export default function DisposePage({ params }: { params: { id: string } }) {
     fd.set('photoBeforeUrl', photoBeforeUrl);
     fd.set('photoAfterUrl', photoAfterUrl);
     fd.set('videoUrl', videoUrl);
+    fd.set('scannedUnitBarcodes', JSON.stringify(scannedUnitBarcodes));
     
     // Auto-generated certificate route or custom uploaded file
     const activeCertUrl = certMode === 'custom' && customCertificateUrl ? customCertificateUrl : autoCertificateUrl;
@@ -331,6 +347,95 @@ export default function DisposePage({ params }: { params: { id: string } }) {
               >
                 ← Switch back to Auto-Generated Certificate
               </button>
+            </div>
+          )}
+        </div>
+
+        {/* 5. Engraved Unit Barcode Verification & Destruction Audit */}
+        <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50/70 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <span>5. Engraved Unit Barcode Verification & Destruction Audit</span>
+                <span className="text-xs bg-orange-100 text-orange-900 font-bold px-2 py-0.5 rounded-full font-mono">
+                  {scannedUnitBarcodes.length} Units Verified
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Scan or confirm individual unit barcodes (bottles, strips, or cream tubes) verified before bio-medical neutralization.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (record?.batch?.batchNumber) {
+                  const qty = Math.min(record.quantity || record.shipment?.quantity || 10, 50);
+                  const list: string[] = [];
+                  for (let i = 1; i <= qty; i++) {
+                    list.push(`BC-${record.batch.batchNumber.replace(/[^A-Z0-9-]/gi, '')}-${String(i).padStart(4, '0')}`);
+                  }
+                  setScannedUnitBarcodes(list);
+                }
+              }}
+              className="text-xs px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg font-semibold transition-colors shrink-0"
+            >
+              ✓ Verify All Lot Units
+            </button>
+          </div>
+
+          {/* Barcode Input Form */}
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => setBarcodeInput(e.target.value)}
+              placeholder="Scan unit barcode on bottle/strip (e.g. BC-BN-202609-1803-0001)..."
+              className="flex-1 text-xs px-3 py-2 rounded-xl border border-slate-200 bg-white font-mono text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const trimmed = barcodeInput.trim();
+                if (trimmed && !scannedUnitBarcodes.includes(trimmed)) {
+                  setScannedUnitBarcodes(prev => [...prev, trimmed]);
+                  setBarcodeInput('');
+                }
+              }}
+              className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+            >
+              + Add
+            </button>
+          </div>
+
+          {/* Scanned Barcodes Badges */}
+          {scannedUnitBarcodes.length > 0 ? (
+            <div className="p-3 bg-white rounded-xl border border-slate-200 max-h-36 overflow-y-auto space-y-1.5">
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Destroyed Unit Serial Numbers ({scannedUnitBarcodes.length}):
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {scannedUnitBarcodes.map((bc, idx) => (
+                  <span
+                    key={idx}
+                    className="inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 bg-orange-50 text-orange-950 border border-orange-200 rounded-md font-semibold"
+                  >
+                    <span>🔥</span>
+                    <span>{bc}</span>
+                    <button
+                      type="button"
+                      onClick={() => setScannedUnitBarcodes(prev => prev.filter((_, i) => i !== idx))}
+                      className="text-orange-400 hover:text-rose-600 ml-0.5"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 bg-white rounded-xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">
+              No unit barcodes scanned yet. Enter barcodes or click "Verify All Lot Units".
             </div>
           )}
         </div>

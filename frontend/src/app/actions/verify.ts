@@ -2,6 +2,7 @@
 
 import { readDb } from '@/lib/db';
 import { extractBatchId, parseBatchQr } from '@/lib/qrHelper';
+import { extractUnitBarcode } from '@/lib/barcodeHelper';
 import crypto from 'crypto';
 
 export interface CustodyEvent {
@@ -44,6 +45,14 @@ export interface VerificationResult {
     isExpired: boolean;
     isNearExpiry: boolean;
     daysRemaining: number;
+  };
+  unitInfo?: {
+    unitBarcode: string;
+    packagingType?: string;
+    status: 'in_stock' | 'sold' | 'disposed';
+    soldAt?: string;
+    disposedAt?: string;
+    invoiceNumber?: string;
   };
   shipment?: {
     id: string;
@@ -90,12 +99,19 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
   // 1. Try parsing via structured QR helper
   const parsed = parseBatchQr(query);
   const extractedId = extractBatchId(query);
+  const unitBc = extractUnitBarcode(query);
 
   // Normalize query terms
   const searchLower = query.toLowerCase();
 
+  const matchedUnit = unitBc && Array.isArray(db.unitRecords)
+    ? db.unitRecords.find(u => u.unitBarcode.toLowerCase() === unitBc.toLowerCase())
+    : undefined;
+
   // 2. Find matching batch
   let matchedBatch = db.batches.find(b => {
+    if (matchedUnit && b.id === matchedUnit.batchId) return true;
+    if (unitBc && unitBc.toUpperCase().includes(b.batchNumber.replace(/[^A-Z0-9-]/gi, '').toUpperCase())) return true;
     if (parsed.batchId && b.id.toLowerCase() === parsed.batchId.toLowerCase()) return true;
     if (extractedId && b.id.toLowerCase() === extractedId.toLowerCase()) return true;
     if (b.id.toLowerCase() === searchLower) return true;
@@ -148,7 +164,7 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
   let authenticityStatus: VerificationResult['authenticityStatus'] = 'genuine';
   if (matchedBatch.isFrozen) {
     authenticityStatus = 'frozen';
-  } else if (isDisposed) {
+  } else if (isDisposed || matchedUnit?.status === 'disposed') {
     authenticityStatus = 'disposed';
   } else if (isExpired) {
     authenticityStatus = 'expired';
@@ -253,6 +269,22 @@ export async function verifyDrugQr(input: string): Promise<VerificationResult> {
       isNearExpiry,
       daysRemaining
     },
+    unitInfo: matchedUnit
+      ? {
+          unitBarcode: matchedUnit.unitBarcode,
+          packagingType: matchedUnit.packagingType,
+          status: matchedUnit.status,
+          soldAt: matchedUnit.soldAt,
+          disposedAt: matchedUnit.disposedAt,
+          invoiceNumber: matchedUnit.invoiceNumber
+        }
+      : unitBc && matchedBatch
+      ? {
+          unitBarcode: unitBc,
+          packagingType: matchedBatch.packagingType || 'Unit Package',
+          status: (matchedBatch.status === 'fully_disposed' ? 'disposed' : 'in_stock') as 'in_stock' | 'sold' | 'disposed'
+        }
+      : undefined,
     shipment: matchedShipment
       ? {
           id: matchedShipment.id,

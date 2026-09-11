@@ -572,6 +572,14 @@ export async function finalizeDisposal(data: FormData) {
   if (!record) return { error: 'Disposal record not found.' };
   if (record.status === 'completed') return { error: 'Disposal already completed.' };
 
+  const scannedUnitBarcodesJson = data.get('scannedUnitBarcodes') as string;
+  let scannedUnitBarcodes: string[] = [];
+  if (scannedUnitBarcodesJson) {
+    try {
+      scannedUnitBarcodes = JSON.parse(scannedUnitBarcodesJson);
+    } catch (e) {}
+  }
+
   const now = new Date().toISOString();
   record.photoBeforeUrl = photoBeforeUrl;
   record.photoAfterUrl = photoAfterUrl;
@@ -581,19 +589,37 @@ export async function finalizeDisposal(data: FormData) {
   record.disposalMethod = disposalMethod;
   record.officerName = officerName;
   record.certificateNotes = certificateNotes;
+  record.scannedUnitBarcodes = scannedUnitBarcodes;
   record.status = 'completed';
   record.completedAt = now;
 
   const batch = db.batches.find(b => b.id === record.batchId);
   if (batch) {
     batch.status = 'fully_disposed';
+
+    // Mark unit records as disposed
+    if (Array.isArray(db.unitRecords)) {
+      for (const u of db.unitRecords) {
+        if (u.batchId === batch.id || scannedUnitBarcodes.includes(u.unitBarcode)) {
+          u.status = 'disposed';
+          u.disposedAt = now;
+          u.disposedBy = session.name;
+          u.disposalId = disposalId;
+        }
+      }
+    }
+
+    const unitCountMsg = scannedUnitBarcodes.length > 0
+      ? ` Verified & neutralized ${scannedUnitBarcodes.length} individual engraved unit barcodes (${batch.packagingType || 'units'}).`
+      : '';
+
     batch.history.push({
       timestamp: now,
       actorId: session.sub,
       actorName: session.name,
       actorRole: 'disposer',
       event: 'FULLY DISPOSED ✓',
-      details: `Safe disposal completed by ${session.name}. Official Certificate #${certificateNumber} and photo/video proofs recorded.`
+      details: `Safe bio-medical destruction completed by ${session.name}. Official Certificate #${certificateNumber} and photo/video proofs recorded.${unitCountMsg}`
     });
 
     // Remove from disposer inventory

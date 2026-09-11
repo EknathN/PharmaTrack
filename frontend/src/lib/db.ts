@@ -32,6 +32,8 @@ export interface Batch {
   expDate: string;
   totalQuantity: number;
   unitDetails: string;
+  packagingType?: string; // e.g. "Strips", "Tonic Bottles", "Cream Tubes", "Vials"
+  unitBarcodes?: string[]; // Array of unique engraved unit barcodes
   qrCode: string;      // base64 QR image data URL
   qrData: string;      // raw text encoded in QR
   manufacturerId: string;
@@ -96,14 +98,73 @@ export interface Shipment {
   updatedAt: string;
 }
 
+export interface UnitRecord {
+  unitBarcode: string;
+  batchId: string;
+  batchNumber: string;
+  medicineName: string;
+  unitIndex: number;
+  packagingType: string;
+  status: 'in_stock' | 'sold' | 'disposed';
+  soldAt?: string;
+  soldBy?: string;
+  soldToCustomer?: string;
+  invoiceNumber?: string;
+  disposedAt?: string;
+  disposedBy?: string;
+  disposalId?: string;
+}
+
+export interface RetailerPriceSetting {
+  medicineName: string;
+  batchId?: string;
+  unitPrice: number;
+  mrp?: number;
+  taxRatePercent?: number; // e.g. 5, 12, 18
+  updatedAt: string;
+}
+
+export interface InvoiceItem {
+  batchId: string;
+  batchNumber: string;
+  medicineName: string;
+  packagingType?: string;
+  scannedUnitBarcodes: string[];
+  quantity: number;
+  unitPrice: number;
+  mrp?: number;
+  taxRatePercent?: number;
+  taxAmount: number;
+  lineTotal: number;
+}
+
 export interface Sale {
   id: string;
+  invoiceNumber?: string;
   retailerId: string;
   retailerName: string;
+  retailerShopName?: string;
+  retailerAddress?: string;
+  retailerCity?: string;
+  retailerState?: string;
+  retailerPincode?: string;
+  retailerPhone?: string;
+  retailerLicense?: string;
+  customerName?: string;
+  customerPhone?: string;
+  doctorName?: string;
+  paymentMode?: 'cash' | 'upi' | 'card' | 'credit';
   batchId: string;
   batchNumber: string;
   medicineName: string;
   quantity: number;
+  unitPrice?: number;
+  subtotal?: number;
+  taxAmount?: number;
+  discountAmount?: number;
+  totalAmount?: number;
+  items?: InvoiceItem[];
+  scannedUnitBarcodes?: string[];
   soldAt: string;
 }
 
@@ -122,6 +183,7 @@ export interface DisposalRecord {
   disposalMethod?: string;
   officerName?: string;
   certificateNotes?: string;
+  scannedUnitBarcodes?: string[];
   status: 'pending' | 'completed';
   completedAt?: string;
   createdAt: string;
@@ -185,6 +247,8 @@ export interface DatabaseSchema {
   alerts: Alert[];
   restockOrders: RestockOrder[];
   rectificationRequests?: RectificationRequest[];
+  retailerPrices?: Record<string, Record<string, RetailerPriceSetting>>; // [retailerId][medicineName or batchId]
+  unitRecords?: UnitRecord[];
 }
 
 // Find real path of data.json regardless of where node was launched
@@ -265,7 +329,9 @@ function getEmptyDb(): DatabaseSchema {
     disposalRecords: [],
     alerts: [],
     restockOrders: [],
-    rectificationRequests: []
+    rectificationRequests: [],
+    retailerPrices: {},
+    unitRecords: []
   };
 }
 
@@ -303,6 +369,8 @@ export async function readDb(): Promise<DatabaseSchema> {
           if (!Array.isArray(parsed.alerts)) parsed.alerts = [];
           if (!Array.isArray(parsed.restockOrders)) parsed.restockOrders = [];
           if (!Array.isArray(parsed.rectificationRequests)) parsed.rectificationRequests = [];
+          if (typeof parsed.retailerPrices !== 'object' || parsed.retailerPrices === null) parsed.retailerPrices = {};
+          if (!Array.isArray(parsed.unitRecords)) parsed.unitRecords = [];
 
           for (const seedUser of SEED_USERS) {
             if (!parsed.users.some(u => u.email.toLowerCase() === seedUser.email.toLowerCase())) {

@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import Link from "next/link";
 import BatchRectificationCard from "@/components/BatchRectificationCard";
+import Barcode from "@/components/Barcode";
+import { formatUnitBarcode } from "@/lib/barcodeHelper";
 
 export default async function BatchDetailPage({ params }: { params: { id: string } }) {
   const data = await getBatchDetail(params.id);
@@ -128,6 +130,34 @@ export default async function BatchDetailPage({ params }: { params: { id: string
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
               Download QR
             </a>
+          </div>
+
+          {/* Engraved Unit Barcode Specification */}
+          <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 text-center space-y-3">
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <h3 className="font-semibold text-slate-900 text-sm">Engraved Unit Barcode</h3>
+              <span className="text-[10px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono font-bold uppercase">
+                Code 128
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-500 text-left">
+              Each individual unit packaging ({batch.packagingType || 'bottle / strip / cream tube'}) carries an engraved serial barcode scanned at retail checkout and bio-hazard disposal:
+            </p>
+
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
+              <Barcode
+                value={formatUnitBarcode(batch.batchNumber, 1)}
+                height={42}
+                moduleWidth={1.8}
+                showText={true}
+                showDownload={true}
+                className="scale-95"
+              />
+              <span className="text-[10px] text-slate-400 font-mono mt-2">
+                Serial Range: {formatUnitBarcode(batch.batchNumber, 1)} ... {formatUnitBarcode(batch.batchNumber, Math.min(batch.totalQuantity || 10, 200))}
+              </span>
+            </div>
           </div>
 
           {/* Shipments */}

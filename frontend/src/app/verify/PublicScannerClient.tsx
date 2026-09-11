@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { verifyDrugQr, VerificationResult } from "@/app/actions/verify";
+import Barcode from "@/components/Barcode";
 
 interface PublicScannerClientProps {
   initialSamples: Array<{ id: string; batchNumber: string; medicineName: string; qrData: string }>;
@@ -526,9 +527,56 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
 
             {/* Found Batch Details */}
             {result.found && result.batch && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Drug Profile Card */}
-                <div className="bg-slate-800 border border-slate-700 rounded-3xl p-6 space-y-4">
+              <div className="space-y-6">
+                {result.unitInfo && (
+                  <div className="p-5 rounded-3xl bg-slate-800/90 border-2 border-emerald-500/50 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
+                          🏷️ Engraved Unit Barcode Authenticated
+                        </span>
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded-full font-mono font-bold uppercase ${
+                          result.unitInfo.status === 'sold'
+                            ? 'bg-blue-900/80 text-blue-200 border border-blue-700'
+                            : result.unitInfo.status === 'disposed'
+                            ? 'bg-orange-900/80 text-orange-200 border border-orange-700'
+                            : 'bg-emerald-900/80 text-emerald-200 border border-emerald-700'
+                        }`}>
+                          {result.unitInfo.status === 'sold'
+                            ? 'Dispensed to Patient'
+                            : result.unitInfo.status === 'disposed'
+                            ? 'Disposed & Incinerated'
+                            : 'Active Unit In Stock'}
+                        </span>
+                      </div>
+                      <div className="font-mono text-base font-bold text-white tracking-wide">
+                        {result.unitInfo.unitBarcode}
+                      </div>
+                      <div className="text-xs text-slate-300">
+                        Packaging Format: <strong>{result.unitInfo.packagingType || 'Medicine Strip / Bottle / Cream Tube'}</strong>
+                        {result.unitInfo.invoiceNumber && (
+                          <span className="ml-2 font-mono text-[11px] text-slate-400">
+                            (Invoice #{result.unitInfo.invoiceNumber})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-2xl shadow-md shrink-0">
+                      <Barcode
+                        value={result.unitInfo.unitBarcode}
+                        height={36}
+                        moduleWidth={1.5}
+                        showText={true}
+                        fontSize={10}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Drug Profile Card */}
+                  <div className="bg-slate-800 border border-slate-700 rounded-3xl p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
@@ -603,7 +651,8 @@ export default function PublicScannerClient({ initialSamples }: PublicScannerCli
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
             {/* Complete Chain of Custody Timeline */}
             {result.found && result.custodyEvents && result.custodyEvents.length > 0 && (

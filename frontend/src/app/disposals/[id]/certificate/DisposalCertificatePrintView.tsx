@@ -238,6 +238,24 @@ export default function DisposalCertificatePrintView({
             {disposal.certificateNotes ||
               "Batch units received under tamper-evident chain-of-custody. De-blistering and crushing executed in negative-pressure containment chamber. Thermal oxidation conducted at temperatures exceeding 1100°C with scrubbed flue gas emissions meeting central air purity norms. Residual bottom ash neutralized and transferred to authorized secure landfill facility."}
           </p>
+
+          {disposal.scannedUnitBarcodes && disposal.scannedUnitBarcodes.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <span className="font-bold text-slate-900 text-[11px] uppercase tracking-wider block mb-1">
+                Verified Engraved Unit Barcodes Destroyed ({disposal.scannedUnitBarcodes.length} Units):
+              </span>
+              <div className="flex flex-wrap gap-1 max-h-24 overflow-y-auto">
+                {disposal.scannedUnitBarcodes.map((bc: string, idx: number) => (
+                  <span
+                    key={idx}
+                    className="font-mono text-[10px] bg-white border border-slate-300 text-slate-800 px-1.5 py-0.5 rounded"
+                  >
+                    🔥 {bc}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─── EVIDENCE, QR CODE & SIGNATURE SECTION ─── */}
