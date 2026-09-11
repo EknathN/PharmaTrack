@@ -149,8 +149,11 @@ export function parseBatchQr(raw: string): ParsedBatchQr {
   const isBatchQr =
     text.includes('Batch ID:') ||
     text.includes('PHARMATRACK:BATCH:') ||
+    text.toLowerCase().includes('ptp:batch') ||
     text.startsWith('BAT-') ||
-    text.includes('Manufacturer:');
+    text.includes('Manufacturer:') ||
+    text.includes('Medicine:') ||
+    text.toLowerCase().includes('batch');
 
   const getField = (pattern: RegExp): string | undefined => {
     const m = text.match(pattern);
@@ -158,11 +161,11 @@ export function parseBatchQr(raw: string): ParsedBatchQr {
   };
 
   return {
-    isBatchQr,
-    batchId,
+    isBatchQr: isBatchQr || !!batchId,
+    batchId: batchId || text,
     manufacturer: getField(/Manufacturer\s*:\s*([^\r\n]+)/i),
     medicine: getField(/Medicine\s*:\s*([^\r\n]+)/i),
-    batchNo: getField(/Batch\s*No(?:\.|\s*)?:\s*([^\r\n]+)/i),
+    batchNo: getField(/Batch\s*No(?:\.|\s*)?:\s*([^\r\n]+)/i) || (text.length < 30 ? text : undefined),
     mfgDate: getField(/Mfg\s*Date\s*:\s*([^\r\n]+)/i),
     expDate: getField(/Exp\s*Date\s*:\s*([^\r\n]+)/i),
     strips: getField(/(?:Strips|Pack\s*Details)\s*:\s*([^\r\n]+)/i),
