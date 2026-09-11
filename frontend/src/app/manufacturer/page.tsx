@@ -166,7 +166,7 @@ export default async function ManufacturerDashboard() {
                     <th className="px-5 py-3 text-left font-medium">Stock (Avail / Total)</th>
                     <th className="px-5 py-3 text-left font-medium">Expiry</th>
                     <th className="px-5 py-3 text-left font-medium">Status</th>
-                    <th className="px-5 py-3 text-left font-medium">QR</th>
+                    <th className="px-5 py-3 text-left font-medium">Dual Label</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -192,7 +192,12 @@ export default async function ManufacturerDashboard() {
                       <td className="px-5 py-3 text-slate-500">{new Date(b.expDate).toLocaleDateString()}</td>
                       <td className="px-5 py-3"><StatusBadge status={b.status} /></td>
                       <td className="px-5 py-3">
-                        <Link href={`/manufacturer/batches/${b.id}`} className="text-xs text-blue-500 hover:underline">View QR →</Link>
+                        <Link
+                          href={`/manufacturer/batches/${b.id}`}
+                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-semibold bg-blue-50 hover:bg-blue-100 px-2.5 py-1 rounded-lg border border-blue-200 transition-colors"
+                        >
+                          🏷️ Dual Label →
+                        </Link>
                       </td>
                     </tr>
                   ))}

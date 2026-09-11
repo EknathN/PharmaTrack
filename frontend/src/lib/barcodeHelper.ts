@@ -106,6 +106,65 @@ export function generateCode128Svg(text: string, options: BarcodeSvgOptions = {}
 }
 
 /**
+ * Draws Code 128 barcode directly onto an HTML5 Canvas context.
+ * 100% synchronous, zero SVG image dependency, pixel-perfect rendering for export.
+ */
+export function drawCode128OnCanvas(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  startX: number,
+  startY: number,
+  height: number = 55,
+  moduleWidth: number = 2,
+  barColor: string = '#0f172a'
+): { width: number; height: number } {
+  const safeText = (text || 'UNKNOWN').trim();
+  const codes: number[] = [START_B];
+  let checkSum = START_B;
+
+  for (let i = 0; i < safeText.length; i++) {
+    const charCode = safeText.charCodeAt(i);
+    const val = charCode >= 32 && charCode <= 126 ? charCode - 32 : 0;
+    codes.push(val);
+    checkSum += val * (i + 1);
+  }
+
+  codes.push(checkSum % 103);
+  codes.push(STOP);
+
+  let binaryString = '';
+  for (const code of codes) {
+    const pattern = CODE128_PATTERNS[code] || '212222';
+    for (let p = 0; p < pattern.length; p++) {
+      const width = parseInt(pattern[p], 10);
+      const isBar = p % 2 === 0;
+      binaryString += (isBar ? '1' : '0').repeat(width);
+    }
+  }
+
+  ctx.fillStyle = barColor;
+  let x = startX;
+  let barStart: number | null = null;
+
+  for (let i = 0; i < binaryString.length; i++) {
+    if (binaryString[i] === '1') {
+      if (barStart === null) barStart = x;
+    } else {
+      if (barStart !== null) {
+        ctx.fillRect(barStart, startY, x - barStart, height);
+        barStart = null;
+      }
+    }
+    x += moduleWidth;
+  }
+  if (barStart !== null) {
+    ctx.fillRect(barStart, startY, x - barStart, height);
+  }
+
+  return { width: binaryString.length * moduleWidth, height };
+}
+
+/**
  * Extracts a compact, recognizable batch suffix for ultra-short barcodes.
  * Avoids long redundant prefixes like "BN-202609-1803" -> "1803"
  */

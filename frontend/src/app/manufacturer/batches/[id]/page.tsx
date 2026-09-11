@@ -4,6 +4,7 @@ import StatusBadge from "@/components/StatusBadge";
 import Link from "next/link";
 import BatchRectificationCard from "@/components/BatchRectificationCard";
 import Barcode from "@/components/Barcode";
+import DualPackagingLabel from "@/components/DualPackagingLabel";
 import { formatUnitBarcode } from "@/lib/barcodeHelper";
 
 export default async function BatchDetailPage({ params }: { params: { id: string } }) {
@@ -43,6 +44,18 @@ export default async function BatchDetailPage({ params }: { params: { id: string
           hasPendingRectification={batch.hasPendingRectification}
         />
       )}
+
+      {/* Unified Dual Packaging Security Label (QR + Barcode at the same place, downloadable as single image) */}
+      <DualPackagingLabel
+        medicineName={batch.medicineName}
+        batchNumber={batch.batchNumber}
+        mfgDate={batch.mfgDate}
+        expDate={batch.expDate}
+        packagingType={batch.packagingType || batch.unitDetails}
+        manufacturerName={batch.manufacturerName}
+        qrCodeUrl={batch.qrCode}
+        totalQuantity={batch.totalQuantity || 100}
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Batch Details (immutable) */}
