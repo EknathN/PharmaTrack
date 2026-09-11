@@ -32,6 +32,26 @@ interface QrScannerProps {
   scanType?: 'medicine' | 'shipment';
 }
 
+/** Play a synthetic chime upon successful code capture */
+function playSuccessChime() {
+  try {
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(659.25, audioCtx.currentTime); // E5
+    osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15); // A5
+    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.25);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.25);
+  } catch (e) {}
+}
+
 export default function QrScanner({
   label,
   onScanned,
@@ -62,9 +82,9 @@ export default function QrScanner({
 
   const scannerRef = useRef<any>(null);
   const divId = useRef(`qr-${Math.random().toString(36).substring(2)}`);
-  const autoAllocateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const multiScanTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Keep latest state in ref for camera callback
+  // Keep synchronous state in ref so rapid camera frames share the latest data immediately
   const scanStateRef = useRef({
     detectedQr,
     detectedBarcode,
@@ -75,6 +95,7 @@ export default function QrScanner({
     expectedMfgDate,
     expectedExpDate,
     isShipment,
+    allocated: false,
   });
 
   useEffect(() => {
@@ -88,19 +109,27 @@ export default function QrScanner({
       expectedMfgDate,
       expectedExpDate,
       isShipment,
+      allocated: scanStateRef.current.allocated,
     };
   }, [detectedQr, detectedBarcode, dualScanMode, onScanned, onDualScanned, expectedBatchNumber, expectedMfgDate, expectedExpDate, isShipment]);
 
+  const stopCamera = useCallback(() => {
+    if (multiScanTimerRef.current) {
+      clearInterval(multiScanTimerRef.current);
+      multiScanTimerRef.current = null;
+    }
+    if (scannerRef.current) {
+      scannerRef.current.stop?.().catch(() => {});
+      scannerRef.current = null;
+    }
+    setScanning(false);
+  }, []);
+
   useEffect(() => {
     return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop?.().catch(() => {});
-      }
-      if (autoAllocateTimerRef.current) {
-        clearTimeout(autoAllocateTimerRef.current);
-      }
+      stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
   // Final allocation dispatcher
   const performAllocation = useCallback((
@@ -112,7 +141,7 @@ export default function QrScanner({
     let isTampered = false;
     let notice = '';
 
-    // Compare MFG & EXP dates if both or expected dates exist
+    // Compare MFG & EXP dates if both exist
     const qMfg = qr?.mfgDate || scanStateRef.current.expectedMfgDate;
     const qExp = qr?.expDate || scanStateRef.current.expectedExpDate;
     const bMfg = bc?.mfgDate;
@@ -123,7 +152,7 @@ export default function QrScanner({
       isTampered = !check.isMatch;
       notice = check.notice;
     } else if (isDual) {
-      notice = '✓ Dual scan verified: Batch QR and Unit Barcode linked.';
+      notice = '✓ Dual scan verified: Batch QR and Unit Barcode paired simultaneously.';
     }
 
     const allocation: DualScanAllocation = {
@@ -163,101 +192,94 @@ export default function QrScanner({
   // Handle detection from camera or manual entry
   const handleDetectedCode = useCallback((raw: string) => {
     const trimmed = raw.trim();
-    if (!trimmed) return;
+    if (!trimmed || scanStateRef.current.allocated) return;
 
     // Fast-path for Shipments: Shipments ONLY use QR code (no barcode)
     if (scanStateRef.current.isShipment) {
+      scanStateRef.current.allocated = true;
       setValue(trimmed);
       scanStateRef.current.onScanned(trimmed);
-      if (scannerRef.current) {
-        scannerRef.current.stop?.().catch(() => {});
-        scannerRef.current = null;
-        setScanning(false);
-      }
+      playSuccessChime();
+      stopCamera();
       return;
     }
 
-    // Check if code is a 1D unit barcode (ultra-compact B-code or legacy BC-)
-    const isBarcodeLike = trimmed.toUpperCase().startsWith('BC-') ||
-      trimmed.toUpperCase().startsWith('B') ||
-      /^B[A-Z0-9]+-(?:M\d{4}E\d{4}|\d{4}-\d{4}|\d+)/i.test(trimmed);
-    const parsedBc = isBarcodeLike ? parseUnitBarcode(trimmed) : null;
+    // Check if code is a unit barcode (encrypted EB-, ultra-compact B-, or BC-)
+    const isBarcode = trimmed.toUpperCase().startsWith('EB-') ||
+      trimmed.toUpperCase().startsWith('BC-') ||
+      /^B[A-Z0-9]+-/i.test(trimmed) ||
+      /^[A-Z0-9]+-\d+$/i.test(trimmed);
+
+    const parsedBc = isBarcode ? parseUnitBarcode(trimmed, 'retailer') : null;
     const parsedQr = !parsedBc?.isValid ? parseBatchQr(trimmed) : null;
 
-    const currentQr = scanStateRef.current.detectedQr;
-    const currentBc = scanStateRef.current.detectedBarcode;
+    let updatedQr = scanStateRef.current.detectedQr;
+    let updatedBc = scanStateRef.current.detectedBarcode;
 
     if (parsedBc?.isValid) {
+      // Synchronously update ref so next code in same tick has latest value
+      scanStateRef.current.detectedBarcode = parsedBc;
+      updatedBc = parsedBc;
       setDetectedBarcode(parsedBc);
       setBarcodeInput(parsedBc.raw);
+    }
 
-      // Check anti-fraud date match against existing QR or expected dates
-      const qMfg = currentQr?.mfgDate || scanStateRef.current.expectedMfgDate;
-      const qExp = currentQr?.expDate || scanStateRef.current.expectedExpDate;
-      const check = compareQrAndBarcodeDates(qMfg, qExp, parsedBc.mfgDate, parsedBc.expDate);
-      
+    if (parsedQr?.isBatchQr) {
+      // Synchronously update ref
+      scanStateRef.current.detectedQr = parsedQr;
+      updatedQr = parsedQr;
+      setDetectedQr(parsedQr);
+      setValue(parsedQr.batchId || trimmed);
+    }
+
+    // Cross-verify dates whenever both are present
+    if (updatedQr && updatedBc) {
+      const check = compareQrAndBarcodeDates(
+        updatedQr.mfgDate || scanStateRef.current.expectedMfgDate,
+        updatedQr.expDate || scanStateRef.current.expectedExpDate,
+        updatedBc.mfgDate,
+        updatedBc.expDate
+      );
       setTamperStatus({
         checked: true,
         isTampered: !check.isMatch,
         notice: check.notice,
       });
 
-      if (currentQr || !scanStateRef.current.dualScanMode) {
-        // Both codes present or single mode -> allocate
+      // BOTH detected simultaneously!
+      if (scanStateRef.current.dualScanMode && !scanStateRef.current.allocated) {
+        scanStateRef.current.allocated = true;
         setAutoAllocating(true);
+        playSuccessChime();
         setTimeout(() => {
-          performAllocation(currentQr, parsedBc, trimmed);
+          performAllocation(updatedQr, updatedBc, trimmed);
           setAutoAllocating(false);
-        }, 500);
-      } else {
-        // Wait for companion QR or allow auto-allocate after brief window
-        if (autoAllocateTimerRef.current) clearTimeout(autoAllocateTimerRef.current);
-        autoAllocateTimerRef.current = setTimeout(() => {
-          performAllocation(null, parsedBc, trimmed);
-        }, 2200);
+          stopCamera();
+        }, 400);
+        return;
       }
-      return;
     }
 
-    if (parsedQr?.isBatchQr) {
-      setDetectedQr(parsedQr);
-      setValue(parsedQr.batchId || trimmed);
-
-      // Check anti-fraud date match against existing Barcode
-      if (currentBc?.mfgDate || currentBc?.expDate) {
-        const check = compareQrAndBarcodeDates(parsedQr.mfgDate, parsedQr.expDate, currentBc.mfgDate, currentBc.expDate);
-        setTamperStatus({
-          checked: true,
-          isTampered: !check.isMatch,
-          notice: check.notice,
-        });
-      }
-
-      if (currentBc || !scanStateRef.current.dualScanMode) {
-        // Both codes present or single mode -> allocate
+    // If dualScanMode is turned OFF (single scan), allocate on whichever matches
+    if (!scanStateRef.current.dualScanMode && !scanStateRef.current.allocated) {
+      if (updatedBc || updatedQr) {
+        scanStateRef.current.allocated = true;
         setAutoAllocating(true);
+        playSuccessChime();
         setTimeout(() => {
-          performAllocation(parsedQr, currentBc, trimmed);
+          performAllocation(updatedQr, updatedBc, trimmed);
           setAutoAllocating(false);
-        }, 500);
-      } else {
-        // Wait for companion Barcode or auto-allocate after brief window
-        if (autoAllocateTimerRef.current) clearTimeout(autoAllocateTimerRef.current);
-        autoAllocateTimerRef.current = setTimeout(() => {
-          performAllocation(parsedQr, null, trimmed);
-        }, 2200);
+          stopCamera();
+        }, 400);
       }
-      return;
     }
-
-    // Generic string (e.g. batch ID, shipment number)
-    setValue(trimmed);
-    performAllocation(null, null, trimmed);
-  }, [performAllocation]);
+  }, [performAllocation, stopCamera]);
 
   const startCamera = async () => {
     setError('');
     setScanning(true);
+    scanStateRef.current.allocated = false;
+
     try {
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
 
@@ -267,9 +289,18 @@ export default function QrScanner({
         } catch (e) {}
       }
 
-      // Configure multi-format scanner:
-      // - Shipments: QR code ONLY
-      // - Medicine Packaging: Both 2D QR and 1D Code-128 / Barcodes
+      // Wide dynamic scanning region to cover both side-by-side QR and Barcode
+      const qrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
+        if (isShipment) {
+          const edge = Math.min(viewfinderWidth, viewfinderHeight) * 0.75;
+          return { width: Math.floor(edge), height: Math.floor(edge) };
+        }
+        return {
+          width: Math.floor(Math.min(viewfinderWidth * 0.95, 620)),
+          height: Math.floor(Math.min(viewfinderHeight * 0.85, 420)),
+        };
+      };
+
       const formatsToSupport = isShipment
         ? [Html5QrcodeSupportedFormats.QR_CODE]
         : [
@@ -280,10 +311,6 @@ export default function QrScanner({
             Html5QrcodeSupportedFormats.UPC_A,
           ];
 
-      const qrbox = isShipment
-        ? { width: 250, height: 250 }
-        : { width: 340, height: 220 };
-
       const scanner = new Html5Qrcode(divId.current, {
         formatsToSupport,
         verbose: false,
@@ -292,26 +319,47 @@ export default function QrScanner({
 
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox },
+        { fps: 20, qrbox },
         (decodedText: string) => {
           handleDetectedCode(decodedText);
         },
         () => {}
       );
+
+      // SIMULTANEOUS MULTI-BARCODE SCANNER ENGINE:
+      // Uses the browser's native BarcodeDetector API if available (Chrome, Edge, Android)
+      // to detect BOTH 2D QR and 1D Barcode in the exact same frame simultaneously!
+      if (typeof window !== 'undefined' && 'BarcodeDetector' in window && !isShipment) {
+        try {
+          const BarcodeDetectorClass = (window as any).BarcodeDetector;
+          const detector = new BarcodeDetectorClass({
+            formats: ['qr_code', 'code_128', 'ean_13', 'code_39', 'upc_a'],
+          });
+
+          multiScanTimerRef.current = setInterval(async () => {
+            if (scanStateRef.current.allocated) return;
+            const videoEl = document.querySelector(`#${divId.current} video`) as HTMLVideoElement | null;
+            if (!videoEl || videoEl.readyState < 2 || videoEl.paused) return;
+
+            try {
+              const detectedCodes = await detector.detect(videoEl);
+              if (detectedCodes && detectedCodes.length > 0) {
+                for (const item of detectedCodes) {
+                  if (item.rawValue) {
+                    handleDetectedCode(item.rawValue);
+                  }
+                }
+              }
+            } catch (err) {}
+          }, 100);
+        } catch (e) {}
+      }
     } catch (err: any) {
       console.error("Scanner camera error:", err);
       setError('Camera not accessible. Please use manual entry or check permissions.');
       setScanning(false);
       setMode('text');
     }
-  };
-
-  const stopCamera = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop?.().catch(() => {});
-      scannerRef.current = null;
-    }
-    setScanning(false);
   };
 
   const handleManualApply = () => {
@@ -324,12 +372,14 @@ export default function QrScanner({
   };
 
   const resetDetections = () => {
+    scanStateRef.current.detectedQr = null;
+    scanStateRef.current.detectedBarcode = null;
+    scanStateRef.current.allocated = false;
     setDetectedQr(null);
     setDetectedBarcode(null);
     setTamperStatus(null);
     setValue('');
     setBarcodeInput('');
-    if (autoAllocateTimerRef.current) clearTimeout(autoAllocateTimerRef.current);
   };
 
   return (
@@ -343,7 +393,7 @@ export default function QrScanner({
           <p className="text-[11px] text-slate-500">
             {isShipment
               ? "Align Shipment Consignment QR code within camera viewfinder. (Transport parcel tracking only - no barcode required)"
-              : "Simultaneously detects 2D Batch QR & 1D Engraved Unit Barcodes with anti-fraud date validation."}
+              : "Point camera to scan BOTH 2D Batch QR and 1D Engraved Unit Barcode simultaneously with anti-tamper date check."}
           </p>
         </div>
 
@@ -355,13 +405,13 @@ export default function QrScanner({
               onClick={() => setDualScanMode(!dualScanMode)}
               className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 ${
                 dualScanMode
-                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200 shadow-xs'
                   : 'bg-slate-100 text-slate-600'
               }`}
-              title="Scan both Batch QR and Unit Barcode together"
+              title="Toggle simultaneous dual scanning of QR and Barcode"
             >
               <span>⚡</span>
-              <span>{dualScanMode ? 'Dual Scan ON' : 'Dual Scan OFF'}</span>
+              <span>{dualScanMode ? 'Dual Scan ON (Both Codes)' : 'Single Scan'}</span>
             </button>
           )}
 
@@ -398,11 +448,44 @@ export default function QrScanner({
       {mode === 'camera' && (
         <div className="space-y-2.5">
           <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-slate-950 shadow-inner">
-            <div id={divId.current} className="w-full min-h-[260px] flex items-center justify-center">
-              {!scanning && <p className="text-slate-400 text-xs py-10">Starting camera engine...</p>}
+            <div id={divId.current} className="w-full min-h-[280px] flex items-center justify-center">
+              {!scanning && <p className="text-slate-400 text-xs py-10">Starting multi-format camera engine...</p>}
             </div>
 
-            {/* Live Detection HUD Overlay */}
+            {/* Visual Dual-Targeting Guidance Overlay for Medicine Stickers */}
+            {!isShipment && scanning && (
+              <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-3">
+                <div className="w-full h-full max-w-[460px] max-h-[200px] border border-dashed border-emerald-400/40 rounded-2xl flex items-center justify-between px-4 py-3 bg-emerald-950/10 backdrop-blur-[1px]">
+                  {/* Left target zone: 2D QR */}
+                  <div className={`w-24 h-24 sm:w-28 sm:h-28 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all duration-300 ${
+                    detectedQr
+                      ? 'border-emerald-400 bg-emerald-500/40 text-white shadow-lg shadow-emerald-500/30'
+                      : 'border-blue-400/70 bg-slate-900/60 text-blue-200'
+                  }`}>
+                    <span className="text-xl">{detectedQr ? '✓' : '⛶'}</span>
+                    <span className="text-[10px] uppercase font-bold mt-1">2D Batch QR</span>
+                    <span className="text-[9px] opacity-80">{detectedQr ? 'Captured' : 'Left Side'}</span>
+                  </div>
+
+                  <div className="text-white/60 font-bold text-sm">
+                    {detectedQr && detectedBarcode ? '⚡' : '+'}
+                  </div>
+
+                  {/* Right target zone: 1D Barcode */}
+                  <div className={`w-32 h-20 sm:w-36 sm:h-24 rounded-xl border-2 flex flex-col items-center justify-center text-center p-2 transition-all duration-300 ${
+                    detectedBarcode
+                      ? 'border-emerald-400 bg-emerald-500/40 text-white shadow-lg shadow-emerald-500/30'
+                      : 'border-amber-400/70 bg-slate-900/60 text-amber-200'
+                  }`}>
+                    <span className="text-lg">{detectedBarcode ? '✓' : '|||||'}</span>
+                    <span className="text-[10px] uppercase font-bold mt-1">1D Unit Barcode</span>
+                    <span className="text-[9px] opacity-80">{detectedBarcode ? 'Captured' : 'Right Side'}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Live Detection HUD Overlay Top Bar */}
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
               <div className="flex gap-1.5">
                 {isShipment ? (
@@ -413,23 +496,23 @@ export default function QrScanner({
                   </span>
                 ) : (
                   <>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs transition-colors ${
                       detectedQr ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
                     }`}>
-                      {detectedQr ? '✓ QR READY' : '⏳ SCAN QR'}
+                      {detectedQr ? '✓ QR READY' : '⏳ 1. SCAN QR'}
                     </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
+                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs transition-colors ${
                       detectedBarcode ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
                     }`}>
-                      {detectedBarcode ? '✓ BARCODE READY' : '⏳ SCAN BARCODE'}
+                      {detectedBarcode ? '✓ BARCODE READY' : '⏳ 2. SCAN BARCODE'}
                     </span>
                   </>
                 )}
               </div>
 
               {autoAllocating && (
-                <span className="px-2 py-0.5 rounded-full bg-blue-600 text-white text-[10px] font-bold animate-pulse">
-                  ⚡ Auto-Allocating...
+                <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[10px] font-bold animate-pulse shadow-md">
+                  ⚡ Allocating Both Details...
                 </span>
               )}
             </div>
@@ -455,7 +538,11 @@ export default function QrScanner({
                   </button>
                   <button
                     type="button"
-                    onClick={() => performAllocation(detectedQr, detectedBarcode)}
+                    onClick={() => {
+                      scanStateRef.current.allocated = true;
+                      performAllocation(detectedQr, detectedBarcode);
+                      stopCamera();
+                    }}
                     className="px-3 py-1.5 text-xs bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-xs transition-colors"
                   >
                     Allocate Now ↵
@@ -498,7 +585,10 @@ export default function QrScanner({
                 onChange={(e) => {
                   setValue(e.target.value);
                   const p = parseBatchQr(e.target.value);
-                  if (p.isBatchQr) setDetectedQr(p);
+                  if (p.isBatchQr) {
+                    scanStateRef.current.detectedQr = p;
+                    setDetectedQr(p);
+                  }
                 }}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
                 placeholder={placeholder || "Paste Batch QR (ptp:batch:...)"}
@@ -514,11 +604,14 @@ export default function QrScanner({
                 value={barcodeInput}
                 onChange={(e) => {
                   setBarcodeInput(e.target.value);
-                  const bc = parseUnitBarcode(e.target.value);
-                  if (bc.isValid) setDetectedBarcode(bc);
+                  const bc = parseUnitBarcode(e.target.value, 'retailer');
+                  if (bc.isValid) {
+                    scanStateRef.current.detectedBarcode = bc;
+                    setDetectedBarcode(bc);
+                  }
                 }}
                 className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
-                placeholder="e.g. B1803-M2609E2809-01"
+                placeholder="e.g. EB-... or B1803-M2609E2809-01"
               />
             </div>
           </div>
