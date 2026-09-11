@@ -225,6 +225,28 @@ export function formatDateForBarcode(dateStr?: string): string {
 export const MANUFACTURER_CIPHER_SECRET = process.env.MANUFACTURER_CIPHER_SECRET || 'Pharmatrack-Pro-Manufacturer-Master-Key-2026';
 
 /**
+ * Universal Base64URL encoder that works in Node.js and all browser polyfills
+ */
+export function bufferToBase64Url(buf: Buffer): string {
+  return buf
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+/**
+ * Universal Base64URL decoder that works in Node.js and all browser polyfills
+ */
+export function base64UrlToBuffer(str: string): Buffer {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) {
+    base64 += '=';
+  }
+  return Buffer.from(base64, 'base64');
+}
+
+/**
  * Encrypts unit barcode payload at the manufacturer stage.
  * Encodes: Batch (4), MFG YYMM (4), EXP YYMM (4), Serial (2) -> 14 bytes
  * Produces an ultra-compact authenticated base64url cipher: "EB-<TOKEN>" (~26 chars)
@@ -257,7 +279,7 @@ export function encryptUnitBarcode(
   const authTag = crypto.createHmac('sha256', MANUFACTURER_CIPHER_SECRET).update(Buffer.concat([salt, cipherBuf])).digest()[0];
 
   const packed = Buffer.concat([salt, cipherBuf, Buffer.from([authTag])]);
-  return `EB-${packed.toString('base64url')}`;
+  return `EB-${bufferToBase64Url(packed)}`;
 }
 
 export interface DecryptedUnitBarcodeResult {
@@ -293,7 +315,7 @@ export function decryptUnitBarcode(
 
   const token = barcode.slice(3);
   try {
-    const packed = Buffer.from(token, 'base64url');
+    const packed = base64UrlToBuffer(token);
     if (packed.length !== 17) {
       return { isValid: false, raw: barcode, isEncrypted: true, isAuthorized: false, error: 'Invalid encrypted payload size' };
     }
