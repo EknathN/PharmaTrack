@@ -29,6 +29,7 @@ interface QrScannerProps {
   expectedBatchNumber?: string;
   expectedMfgDate?: string;
   expectedExpDate?: string;
+  scanType?: 'medicine' | 'shipment';
 }
 
 export default function QrScanner({
@@ -39,9 +40,11 @@ export default function QrScanner({
   expectedBatchNumber,
   expectedMfgDate,
   expectedExpDate,
+  scanType = 'medicine',
 }: QrScannerProps) {
+  const isShipment = scanType === 'shipment';
   const [mode, setMode] = useState<'camera' | 'text'>('text');
-  const [dualScanMode, setDualScanMode] = useState(true);
+  const [dualScanMode, setDualScanMode] = useState(!isShipment);
   const [value, setValue] = useState('');
   const [barcodeInput, setBarcodeInput] = useState('');
   const [scanning, setScanning] = useState(false);
@@ -71,6 +74,7 @@ export default function QrScanner({
     expectedBatchNumber,
     expectedMfgDate,
     expectedExpDate,
+    isShipment,
   });
 
   useEffect(() => {
@@ -83,8 +87,9 @@ export default function QrScanner({
       expectedBatchNumber,
       expectedMfgDate,
       expectedExpDate,
+      isShipment,
     };
-  }, [detectedQr, detectedBarcode, dualScanMode, onScanned, onDualScanned, expectedBatchNumber, expectedMfgDate, expectedExpDate]);
+  }, [detectedQr, detectedBarcode, dualScanMode, onScanned, onDualScanned, expectedBatchNumber, expectedMfgDate, expectedExpDate, isShipment]);
 
   useEffect(() => {
     return () => {
@@ -159,6 +164,18 @@ export default function QrScanner({
   const handleDetectedCode = useCallback((raw: string) => {
     const trimmed = raw.trim();
     if (!trimmed) return;
+
+    // Fast-path for Shipments: Shipments ONLY use QR code (no barcode)
+    if (scanStateRef.current.isShipment) {
+      setValue(trimmed);
+      scanStateRef.current.onScanned(trimmed);
+      if (scannerRef.current) {
+        scannerRef.current.stop?.().catch(() => {});
+        scannerRef.current = null;
+        setScanning(false);
+      }
+      return;
+    }
 
     // Check if code is a 1D unit barcode (ultra-compact B-code or legacy BC-)
     const isBarcodeLike = trimmed.toUpperCase().startsWith('BC-') ||
@@ -250,22 +267,32 @@ export default function QrScanner({
         } catch (e) {}
       }
 
-      // Configure multi-format scanner: both 2D QR and 1D Code-128 / Barcodes
+      // Configure multi-format scanner:
+      // - Shipments: QR code ONLY
+      // - Medicine Packaging: Both 2D QR and 1D Code-128 / Barcodes
+      const formatsToSupport = isShipment
+        ? [Html5QrcodeSupportedFormats.QR_CODE]
+        : [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.UPC_A,
+          ];
+
+      const qrbox = isShipment
+        ? { width: 250, height: 250 }
+        : { width: 340, height: 220 };
+
       const scanner = new Html5Qrcode(divId.current, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.UPC_A,
-        ],
+        formatsToSupport,
         verbose: false,
       });
       scannerRef.current = scanner;
 
       await scanner.start(
         { facingMode: 'environment' },
-        { fps: 15, qrbox: { width: 340, height: 220 } },
+        { fps: 15, qrbox },
         (decodedText: string) => {
           handleDetectedCode(decodedText);
         },
@@ -291,7 +318,7 @@ export default function QrScanner({
     if (value.trim()) {
       handleDetectedCode(value);
     }
-    if (barcodeInput.trim()) {
+    if (!isShipment && barcodeInput.trim()) {
       handleDetectedCode(barcodeInput);
     }
   };
@@ -314,25 +341,29 @@ export default function QrScanner({
             {label}
           </label>
           <p className="text-[11px] text-slate-500">
-            Simultaneously detects 2D Batch QR &amp; 1D Engraved Unit Barcodes with anti-fraud date validation.
+            {isShipment
+              ? "Align Shipment Consignment QR code within camera viewfinder. (Transport parcel tracking only - no barcode required)"
+              : "Simultaneously detects 2D Batch QR & 1D Engraved Unit Barcodes with anti-fraud date validation."}
           </p>
         </div>
 
         <div className="flex items-center gap-1.5">
-          {/* Dual Scan Mode Toggle */}
-          <button
-            type="button"
-            onClick={() => setDualScanMode(!dualScanMode)}
-            className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 ${
-              dualScanMode
-                ? 'bg-purple-100 text-purple-800 border border-purple-200'
-                : 'bg-slate-100 text-slate-600'
-            }`}
-            title="Scan both Batch QR and Unit Barcode together"
-          >
-            <span>⚡</span>
-            <span>{dualScanMode ? 'Dual Scan ON' : 'Dual Scan OFF'}</span>
-          </button>
+          {/* Dual Scan Mode Toggle: Only applicable for medicine units */}
+          {!isShipment && (
+            <button
+              type="button"
+              onClick={() => setDualScanMode(!dualScanMode)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all flex items-center gap-1 ${
+                dualScanMode
+                  ? 'bg-purple-100 text-purple-800 border border-purple-200'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+              title="Scan both Batch QR and Unit Barcode together"
+            >
+              <span>⚡</span>
+              <span>{dualScanMode ? 'Dual Scan ON' : 'Dual Scan OFF'}</span>
+            </button>
+          )}
 
           {/* Mode switch */}
           <button
@@ -368,22 +399,32 @@ export default function QrScanner({
         <div className="space-y-2.5">
           <div className="relative rounded-2xl overflow-hidden border border-slate-300 bg-slate-950 shadow-inner">
             <div id={divId.current} className="w-full min-h-[260px] flex items-center justify-center">
-              {!scanning && <p className="text-slate-400 text-xs py-10">Starting multi-format camera engine...</p>}
+              {!scanning && <p className="text-slate-400 text-xs py-10">Starting camera engine...</p>}
             </div>
 
-            {/* Live Dual Detection HUD Overlay */}
+            {/* Live Detection HUD Overlay */}
             <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
               <div className="flex gap-1.5">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
-                  detectedQr ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
-                }`}>
-                  {detectedQr ? '✓ QR READY' : '⏳ SCAN QR'}
-                </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
-                  detectedBarcode ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
-                }`}>
-                  {detectedBarcode ? '✓ BARCODE READY' : '⏳ SCAN BARCODE'}
-                </span>
+                {isShipment ? (
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
+                    value ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
+                  }`}>
+                    {value ? '✓ SHIPMENT QR READY' : '⏳ ALIGN SHIPMENT QR'}
+                  </span>
+                ) : (
+                  <>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
+                      detectedQr ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
+                    }`}>
+                      {detectedQr ? '✓ QR READY' : '⏳ SCAN QR'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold tracking-tight shadow-xs ${
+                      detectedBarcode ? 'bg-emerald-500 text-white' : 'bg-slate-800/80 text-slate-300 border border-slate-700'
+                    }`}>
+                      {detectedBarcode ? '✓ BARCODE READY' : '⏳ SCAN BARCODE'}
+                    </span>
+                  </>
+                )}
               </div>
 
               {autoAllocating && (
@@ -403,7 +444,7 @@ export default function QrScanner({
               Stop Camera
             </button>
             <div className="flex items-center gap-2">
-              {(detectedQr || detectedBarcode) && (
+              {(detectedQr || detectedBarcode) && !isShipment && (
                 <>
                   <button
                     type="button"
@@ -428,43 +469,60 @@ export default function QrScanner({
 
       {error && <p className="text-xs text-rose-600 font-medium">{error}</p>}
 
-      {/* Manual Input Fields (Supports either or both) */}
+      {/* Manual Input Fields */}
       <div className="space-y-2">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {isShipment ? (
           <div>
             <label className="block text-[11px] font-bold text-slate-600 mb-1">
-              📦 Batch QR Code or Batch ID
+              📦 Shipment Consignment QR Code / Gatepass ID
             </label>
             <input
               type="text"
               value={value}
               onChange={(e) => {
                 setValue(e.target.value);
-                const p = parseBatchQr(e.target.value);
-                if (p.isBatchQr) setDetectedQr(p);
               }}
               className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
-              placeholder={placeholder || "Paste Batch QR (ptp:batch:...)"}
+              placeholder={placeholder || "Paste Shipment QR (PHARMATRACK:SHIPMENT:...)"}
             />
           </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                📦 Batch QR Code or Batch ID
+              </label>
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => {
+                  setValue(e.target.value);
+                  const p = parseBatchQr(e.target.value);
+                  if (p.isBatchQr) setDetectedQr(p);
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
+                placeholder={placeholder || "Paste Batch QR (ptp:batch:...)"}
+              />
+            </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 mb-1">
-              🏷️ Engraved Unit Barcode (MFG + EXP)
-            </label>
-            <input
-              type="text"
-              value={barcodeInput}
-              onChange={(e) => {
-                setBarcodeInput(e.target.value);
-                const bc = parseUnitBarcode(e.target.value);
-                if (bc.isValid) setDetectedBarcode(bc);
-              }}
-              className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
-              placeholder="e.g. B1803-M2609E2809-01"
-            />
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 mb-1">
+                🏷️ Engraved Unit Barcode (MFG + EXP)
+              </label>
+              <input
+                type="text"
+                value={barcodeInput}
+                onChange={(e) => {
+                  setBarcodeInput(e.target.value);
+                  const bc = parseUnitBarcode(e.target.value);
+                  if (bc.isValid) setDetectedBarcode(bc);
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-mono text-xs bg-slate-50 text-slate-800"
+                placeholder="e.g. B1803-M2609E2809-01"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex justify-end">
           <button
@@ -472,76 +530,95 @@ export default function QrScanner({
             onClick={handleManualApply}
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition-colors"
           >
-            Apply &amp; Allocate Details ↵
+            {isShipment ? "Apply Shipment QR ↵" : "Apply & Allocate Details ↵"}
           </button>
         </div>
       </div>
 
-      {/* ─── LIVE ALLOCATED DETAILS & ANTI-FRAUD DISPLAY ─── */}
-      {(detectedQr || detectedBarcode || tamperStatus) && (
-        <div className="space-y-2 pt-2 border-t border-slate-100">
-          {/* Anti-Fraud Date Cross-Verification Banner */}
-          {tamperStatus && (
-            <div
-              className={`p-2.5 rounded-xl text-xs flex items-center justify-between font-medium border ${
-                tamperStatus.isTampered
-                  ? 'bg-rose-50 border-rose-200 text-rose-800'
-                  : 'bg-emerald-50 border-emerald-200 text-emerald-900'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <span className="text-base">{tamperStatus.isTampered ? '🚨' : '🛡️'}</span>
-                <span>{tamperStatus.notice}</span>
-              </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
-                tamperStatus.isTampered ? 'bg-rose-200 text-rose-900' : 'bg-emerald-200 text-emerald-900'
-              }`}>
-                {tamperStatus.isTampered ? 'Date Tampering Detected' : 'Dates Anti-Tamper Matched'}
+      {/* ─── LIVE ALLOCATED DETAILS / SHIPMENT CONFIRMATION DISPLAY ─── */}
+      {isShipment ? (
+        value && (
+          <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-1 text-blue-950 text-xs">
+            <div className="flex items-center justify-between font-bold text-[11px] text-blue-900">
+              <span className="flex items-center gap-1.5">
+                <span>📦</span>
+                <span>Shipment Consignment QR Captured</span>
               </span>
+              <code className="bg-white px-2 py-0.5 rounded font-mono text-[11px] text-blue-800 border border-blue-200">
+                {value}
+              </code>
             </div>
-          )}
-
-          {/* Allocation Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-            {/* Batch QR Allocation */}
-            {detectedQr && (
-              <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-1 text-blue-950">
-                <div className="flex items-center justify-between font-bold text-[11px] text-blue-900">
-                  <span>📦 Batch QR Verified</span>
-                  <code className="bg-white px-1.5 py-0.5 rounded font-mono text-[10px] text-blue-800 border border-blue-200">
-                    {detectedQr.batchId || detectedQr.batchNo}
-                  </code>
-                </div>
-                {detectedQr.medicine && (
-                  <div><span className="text-slate-500">Medicine:</span> <strong>{detectedQr.medicine}</strong></div>
-                )}
-                <div className="flex justify-between text-[11px]">
-                  <span><span className="text-slate-500">MFG:</span> <strong>{detectedQr.mfgDate || 'N/A'}</strong></span>
-                  <span><span className="text-slate-500">EXP:</span> <strong>{detectedQr.expDate || 'N/A'}</strong></span>
-                </div>
-              </div>
-            )}
-
-            {/* Engraved Barcode Allocation */}
-            {detectedBarcode && (
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1 text-emerald-950">
-                <div className="flex items-center justify-between font-bold text-[11px] text-emerald-900">
-                  <span>🏷️ Engraved Unit Barcode</span>
-                  <span className="bg-white px-1.5 py-0.5 rounded font-mono text-[10px] text-emerald-800 border border-emerald-200">
-                    Unit #{detectedBarcode.unitSerial || '1'}
-                  </span>
-                </div>
-                <div className="font-mono text-[11px] break-all bg-white/80 p-1 rounded border border-emerald-100">
-                  {detectedBarcode.raw}
-                </div>
-                <div className="flex justify-between text-[11px]">
-                  <span><span className="text-slate-500">Barcode MFG:</span> <strong>{detectedBarcode.mfgDate || 'N/A'}</strong></span>
-                  <span><span className="text-slate-500">Barcode EXP:</span> <strong>{detectedBarcode.expDate || 'N/A'}</strong></span>
-                </div>
-              </div>
-            )}
+            <p className="text-[11px] text-slate-500">
+              ✓ Ready for transport intake verification. (Consignment parcel uses QR code only).
+            </p>
           </div>
-        </div>
+        )
+      ) : (
+        (detectedQr || detectedBarcode || tamperStatus) && (
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            {/* Anti-Fraud Date Cross-Verification Banner */}
+            {tamperStatus && (
+              <div
+                className={`p-2.5 rounded-xl text-xs flex items-center justify-between font-medium border ${
+                  tamperStatus.isTampered
+                    ? 'bg-rose-50 border-rose-200 text-rose-800'
+                    : 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{tamperStatus.isTampered ? '🚨' : '🛡️'}</span>
+                  <span>{tamperStatus.notice}</span>
+                </div>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                  tamperStatus.isTampered ? 'bg-rose-200 text-rose-900' : 'bg-emerald-200 text-emerald-900'
+                }`}>
+                  {tamperStatus.isTampered ? 'Date Tampering Detected' : 'Dates Anti-Tamper Matched'}
+                </span>
+              </div>
+            )}
+
+            {/* Allocation Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Batch QR Allocation */}
+              {detectedQr && (
+                <div className="p-3 bg-blue-50/70 border border-blue-200 rounded-xl space-y-1 text-blue-950">
+                  <div className="flex items-center justify-between font-bold text-[11px] text-blue-900">
+                    <span>📦 Batch QR Verified</span>
+                    <code className="bg-white px-1.5 py-0.5 rounded font-mono text-[10px] text-blue-800 border border-blue-200">
+                      {detectedQr.batchId || detectedQr.batchNo}
+                    </code>
+                  </div>
+                  {detectedQr.medicine && (
+                    <div><span className="text-slate-500">Medicine:</span> <strong>{detectedQr.medicine}</strong></div>
+                  )}
+                  <div className="flex justify-between text-[11px]">
+                    <span><span className="text-slate-500">MFG:</span> <strong>{detectedQr.mfgDate || 'N/A'}</strong></span>
+                    <span><span className="text-slate-500">EXP:</span> <strong>{detectedQr.expDate || 'N/A'}</strong></span>
+                  </div>
+                </div>
+              )}
+
+              {/* Engraved Barcode Allocation */}
+              {detectedBarcode && (
+                <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1 text-emerald-950">
+                  <div className="flex items-center justify-between font-bold text-[11px] text-emerald-900">
+                    <span>🏷️ Engraved Unit Barcode</span>
+                    <span className="bg-white px-1.5 py-0.5 rounded font-mono text-[10px] text-emerald-800 border border-emerald-200">
+                      Unit #{detectedBarcode.unitSerial || '1'}
+                    </span>
+                  </div>
+                  <div className="font-mono text-[11px] break-all bg-white/80 p-1 rounded border border-emerald-100">
+                    {detectedBarcode.raw}
+                  </div>
+                  <div className="flex justify-between text-[11px]">
+                    <span><span className="text-slate-500">Barcode MFG:</span> <strong>{detectedBarcode.mfgDate || 'N/A'}</strong></span>
+                    <span><span className="text-slate-500">Barcode EXP:</span> <strong>{detectedBarcode.expDate || 'N/A'}</strong></span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )
       )}
     </div>
   );

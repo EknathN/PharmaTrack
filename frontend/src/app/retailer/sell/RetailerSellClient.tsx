@@ -489,6 +489,7 @@ export default function RetailerSellClient({
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                   <QrScanner
                     label="Align Unit Barcode and/or Batch QR inside camera viewfinder"
+                    scanType="medicine"
                     onScanned={handleProcessBarcode}
                     onDualScanned={handleDualScanned}
                     placeholder="Scanning live QR + Barcode..."

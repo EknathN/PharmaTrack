@@ -227,6 +227,7 @@ function DisposerReceiveContent() {
         <div>
           <QrScanner
             label="Step 1: Scan Shipment QR Code"
+            scanType="shipment"
             onScanned={setShipmentQr}
             placeholder="PHARMATRACK:SHIPMENT:..."
           />
@@ -241,6 +242,7 @@ function DisposerReceiveContent() {
         <div>
           <QrScanner
             label="Step 2: Scan Medicine QR Code (on medicine box)"
+            scanType="medicine"
             onScanned={setMedicineQr}
             placeholder="PHARMATRACK:BATCH:..."
           />

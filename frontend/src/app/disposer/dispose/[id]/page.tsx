@@ -404,6 +404,7 @@ export default function DisposePage({ params }: { params: { id: string } }) {
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
               <QrScanner
                 label="Scan Engraved Unit Barcode or Batch QR"
+                scanType="medicine"
                 expectedBatchNumber={record?.batch?.batchNumber}
                 expectedMfgDate={record?.batch?.mfgDate}
                 expectedExpDate={record?.batch?.expDate}

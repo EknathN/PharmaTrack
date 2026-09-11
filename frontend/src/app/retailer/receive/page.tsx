@@ -231,6 +231,7 @@ function RetailerReceiveContent() {
         <div>
           <QrScanner
             label={t('shipmentQrLabel', 'Step 1: Scan Shipment QR Code')}
+            scanType="shipment"
             onScanned={(code) => setShipmentQr(code)}
             placeholder="PHARMATRACK:SHIPMENT:..."
           />
@@ -245,6 +246,7 @@ function RetailerReceiveContent() {
         <div>
           <QrScanner
             label={t('medicineQrLabel', 'Step 2: Scan Medicine / Batch QR Code (on medicine box)')}
+            scanType="medicine"
             onScanned={(code) => setMedicineQr(code)}
             placeholder="PHARMATRACK:BATCH:..."
           />

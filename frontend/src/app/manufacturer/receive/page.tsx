@@ -250,6 +250,7 @@ function ManufacturerReceiveContent() {
         <div>
           <QrScanner
             label="Step 1: Scan Return Shipment QR Code"
+            scanType="shipment"
             onScanned={setShipmentQr}
             placeholder="PHARMATRACK:SHIPMENT:..."
           />
@@ -264,6 +265,7 @@ function ManufacturerReceiveContent() {
         <div>
           <QrScanner
             label="Step 2: Scan Medicine / Batch QR Code"
+            scanType="medicine"
             onScanned={setMedicineQr}
             placeholder="PHARMATRACK:BATCH:..."
           />
