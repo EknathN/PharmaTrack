@@ -97,10 +97,16 @@ export default function BarcodeScanner({
     try {
       const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
 
-      // Pure 1D Code 128 decoding: maximum speed, zero 2D matrix overhead
+      // High-speed 1D barcode engine: Code 128 & Code 39 with hardware acceleration
       const scanner = new Html5Qrcode(divId.current, {
-        formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128],
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+        ],
         verbose: false,
+        experimentalFeatures: {
+          useBarCodeDetectorIfSupported: true,
+        },
       });
       scannerRef.current = scanner;
 
@@ -113,11 +119,11 @@ export default function BarcodeScanner({
       };
 
       const qrboxFunction = (viewfinderWidth: number, viewfinderHeight: number) => {
-        // Horizontal slot for 1D barcodes
-        const boxWidth = Math.min(viewfinderWidth * 0.9, 360);
+        // Generous horizontal target slot for effortless aiming
+        const boxWidth = Math.min(Math.floor(viewfinderWidth * 0.92), 400);
         return {
-          width: Math.round(boxWidth),
-          height: Math.round(boxWidth * 0.35)
+          width: Math.floor(boxWidth),
+          height: Math.min(Math.floor(boxWidth * 0.52), 220)
         };
       };
 

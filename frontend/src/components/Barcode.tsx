@@ -12,13 +12,13 @@ interface BarcodeProps extends BarcodeSvgOptions {
 
 export default function Barcode({
   value,
-  height = 42,
-  moduleWidth = 1.8,
+  height = 52,
+  moduleWidth = 2.4,
   showText = true,
-  fontSize = 11,
-  barColor = "#0f172a",
+  fontSize = 12,
+  barColor = "#000000",
   bgColor = "transparent",
-  margin = 6,
+  margin = 8,
   className = "",
   label,
   showDownload = false,

@@ -151,21 +151,21 @@ export default function DualPackagingLabel({
       ctx.textAlign = "left";
       ctx.fillStyle = "#0f172a";
       ctx.font = "bold 18px system-ui, -apple-system, sans-serif";
-      ctx.fillText("ENCRYPTED UNIT BARCODE", 410, 310);
+      ctx.fillText("UNIT SERIAL BARCODE", 410, 310);
 
       ctx.fillStyle = "#64748b";
       ctx.font = "13px system-ui, -apple-system, sans-serif";
       ctx.fillText(
-        "Scanned at Retail POS Sale & Bio-Destruction Audit (Confidential Dates Sealed)",
+        "High-Speed 1D Barcode · Instant Camera & Laser Scanner Recognition",
         410,
         335
       );
 
       // Draw Barcode bars directly with canvas helper
       const barcodeStartX = 410;
-      const barcodeStartY = 360;
-      const barcodeHeight = 110;
-      const barcodeModuleWidth = 2.4;
+      const barcodeStartY = 355;
+      const barcodeHeight = 115;
+      const barcodeModuleWidth = 2.8;
 
       drawCode128OnCanvas(
         ctx,
@@ -174,12 +174,12 @@ export default function DualPackagingLabel({
         barcodeStartY,
         barcodeHeight,
         barcodeModuleWidth,
-        "#0f172a"
+        "#000000"
       );
 
       // Barcode Human-Readable Text
-      ctx.fillStyle = "#0f172a";
-      ctx.font = "bold 16px monospace";
+      ctx.fillStyle = "#000000";
+      ctx.font = "bold 18px monospace";
       ctx.fillText(currentBarcode, barcodeStartX + 20, barcodeStartY + barcodeHeight + 28);
 
       // Security Badges on Right Column
@@ -378,23 +378,23 @@ export default function DualPackagingLabel({
               <span className="text-[10px] text-slate-400 block">Complete Provenance</span>
             </div>
 
-            {/* Right 3/5: 1D Encrypted Unit Barcode */}
+            {/* Right 3/5: 1D Simple Unit Barcode */}
             <div className="sm:col-span-3 flex flex-col items-center justify-center p-3 bg-slate-50 rounded-xl border border-slate-200 text-center">
               <span className="text-[11px] font-mono font-bold text-slate-800 mb-1 flex items-center gap-1">
-                <span>🔒 ENCRYPTED UNIT BARCODE</span>
+                <span>🏷️ UNIT SERIAL BARCODE</span>
               </span>
-              <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-xs w-full flex justify-center overflow-hidden">
+              <div className="bg-white p-3 rounded-lg border border-slate-200 shadow-xs w-full flex justify-center overflow-hidden">
                 <Barcode
                   value={currentBarcode}
-                  height={48}
-                  moduleWidth={1.8}
+                  height={52}
+                  moduleWidth={2.4}
                   showText={true}
-                  fontSize={10}
-                  className="scale-95"
+                  fontSize={11}
+                  barColor="#000000"
                 />
               </div>
               <span className="text-[10px] text-slate-500 mt-1.5 block">
-                Unlocked by Retailer POS & Bio-Disposer
+                High-Speed 1D Barcode (Optimized for instant camera scan)
               </span>
             </div>
           </div>

@@ -373,10 +373,10 @@ export function decryptUnitBarcode(
 }
 
 /**
- * Formats an encrypted unit barcode embedding both Manufacturing and Expiry dates.
- * Format: EB-<BASE64URL_TOKEN>
- * Example: "EB-RORJYnvBnIcUfKOZcfX8ies" (~26 characters)
- * Data is encrypted from the manufacturer and revealed only to authorized Retailer or Disposer.
+ * Formats a clean, simple, high-contrast unit barcode for medicine packages.
+ * Format: BC-<BATCH_CODE>-<SERIAL> (e.g. "BC-1803-01", length only 10 chars).
+ * Designed for maximum scannability: wide thick bars, low density, high contrast,
+ * easily recognized by budget webcams, smartphone dual cameras, and handheld laser guns.
  */
 export function formatUnitBarcode(
   batchNumber: string,
@@ -384,7 +384,9 @@ export function formatUnitBarcode(
   mfgDate?: string,
   expDate?: string
 ): string {
-  return encryptUnitBarcode(batchNumber, unitIndex, mfgDate, expDate);
+  const b = getCompactBatchCode(batchNumber).toUpperCase();
+  const s = String(unitIndex || 1).padStart(2, '0');
+  return `BC-${b}-${s}`;
 }
 
 export interface ParsedUnitBarcode {
@@ -640,15 +642,43 @@ export function revealAndStoreUnitRecord(
     db.unitRecords = [];
   }
 
-  const dec = decryptUnitBarcode(barcode, role);
-  if (!dec.isValid || !dec.isAuthorized) {
-    return { success: false, error: dec.error || dec.message || 'Decryption authorization rejected' };
+  const trimmed = (barcode || '').trim();
+  const isEncrypted = trimmed.toUpperCase().startsWith('EB-');
+  let dec: DecryptedUnitBarcodeResult;
+
+  if (isEncrypted) {
+    dec = decryptUnitBarcode(trimmed, role);
+    if (!dec.isValid || !dec.isAuthorized) {
+      return { success: false, error: dec.error || dec.message || 'Decryption authorization rejected' };
+    }
+  } else {
+    const parsed = parseUnitBarcode(trimmed, role);
+    if (!parsed.isValid) {
+      return { success: false, error: 'Invalid unit barcode format' };
+    }
+    const batch = db.batches.find(b => {
+      const cleanB = b.batchNumber.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      return cleanB.includes((parsed.batchNumber || '').toUpperCase());
+    });
+
+    dec = {
+      isValid: true,
+      raw: parsed.raw,
+      isEncrypted: false,
+      isAuthorized: true,
+      batchNumber: parsed.batchNumber,
+      mfgDate: parsed.mfgDate || batch?.mfgDate || 'N/A',
+      expDate: parsed.expDate || batch?.expDate || 'N/A',
+      unitSerial: parsed.unitSerial,
+      unitIndex: parsed.unitIndex,
+      revealedByRole: role,
+    };
   }
 
   const now = new Date().toISOString();
 
   // 1. Check if unit already in ledger
-  let record = db.unitRecords.find(u => u.unitBarcode.toLowerCase() === barcode.toLowerCase());
+  let record = db.unitRecords.find(u => u.unitBarcode.toLowerCase() === trimmed.toLowerCase());
 
   // 2. If not found by exact barcode, match by batch and unit serial
   if (!record && dec.batchNumber) {
@@ -666,14 +696,14 @@ export function revealAndStoreUnitRecord(
     });
 
     record = {
-      unitBarcode: barcode,
+      unitBarcode: trimmed,
       batchId: batch ? batch.id : `BATCH-${dec.batchNumber}`,
       batchNumber: batch ? batch.batchNumber : dec.batchNumber!,
       medicineName: batch ? batch.medicineName : 'Pharmaceutical Unit',
       unitIndex: dec.unitIndex || 1,
       packagingType: batch?.packagingType || 'Unit Package',
       status: role === 'retailer' ? 'sold' : 'disposed',
-      isEncrypted: true,
+      isEncrypted: isEncrypted,
       decryptedData: {
         batchNumber: dec.batchNumber!,
         mfgDate: dec.mfgDate!,
@@ -691,7 +721,7 @@ export function revealAndStoreUnitRecord(
     };
     db.unitRecords.push(record);
   } else {
-    record.isEncrypted = true;
+    record.isEncrypted = isEncrypted;
     record.decryptedData = {
       batchNumber: dec.batchNumber!,
       mfgDate: dec.mfgDate!,

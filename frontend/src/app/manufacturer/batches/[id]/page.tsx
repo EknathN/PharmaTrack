@@ -161,23 +161,23 @@ export default async function BatchDetailPage({ params }: { params: { id: string
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center">
               <Barcode
                 value={formatUnitBarcode(batch.batchNumber, 1, batch.mfgDate, batch.expDate)}
-                height={42}
-                moduleWidth={1.8}
+                height={52}
+                moduleWidth={2.4}
                 showText={true}
                 showDownload={true}
-                className="scale-95"
+                barColor="#000000"
               />
-              <span className="text-[10px] text-slate-400 font-mono mt-2">
+              <span className="text-[11px] text-slate-500 font-mono font-bold mt-2">
                 Serial Range: {formatUnitBarcode(batch.batchNumber, 1, batch.mfgDate, batch.expDate)} ... {formatUnitBarcode(batch.batchNumber, Math.min(batch.totalQuantity || 10, 200), batch.mfgDate, batch.expDate)}
               </span>
             </div>
 
             <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl text-left space-y-1">
               <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
-                <span>🔒 Cryptographically Encrypted from Manufacturer</span>
+                <span>⚡ High-Speed 1D Barcode (Easy to Scan)</span>
               </div>
               <p className="text-[11px] text-emerald-800 leading-relaxed">
-                Unit barcodes are encrypted with manufacturer HMAC signatures. Embedded Batch, MFG ({batch.mfgDate}), EXP ({batch.expDate}), and Serial details remain encrypted until revealed by an authorized <strong>Retailer</strong> at checkout or <strong>Disposer</strong> during neutralization.
+                Short, clean Code 128 format with bold optical bars for effortless scanning across budget webcams, smartphone dual cameras, and retail barcode guns. Scanned units are instantly tracked at Retail checkout and Bio-Hazard disposal.
               </p>
             </div>
           </div>

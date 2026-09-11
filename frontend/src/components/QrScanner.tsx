@@ -232,9 +232,11 @@ export default function QrScanner({
 
       // Pure single-format selection:
       // - QR Scanner: strictly QR_CODE
-      // - Barcode Scanner: strictly CODE_128
+      // Dynamic single-format decoders to avoid frame rate bottlenecks:
+      // - QR Scanner: strictly QR_CODE
+      // - Barcode Scanner: CODE_128 & CODE_39
       const formatsToSupport = target === 'barcode'
-        ? [Html5QrcodeSupportedFormats.CODE_128]
+        ? [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39]
         : [Html5QrcodeSupportedFormats.QR_CODE];
 
       const scanner = new Html5Qrcode(divId.current, {
@@ -247,13 +249,13 @@ export default function QrScanner({
       scannerRef.current = scanner;
 
       // High-efficiency viewfinder box tailored per format:
-      // - Barcode: horizontal wide slot (focuses on lines, filters vertical noise)
+      // - Barcode: generous horizontal slot for effortless line alignment
       // - QR Code: square 1:1 box (centers matrix)
       const qrbox = (viewfinderWidth: number, viewfinderHeight: number) => {
         if (target === 'barcode') {
           return {
-            width: Math.min(Math.floor(viewfinderWidth * 0.88), 360),
-            height: Math.min(Math.floor(viewfinderHeight * 0.45), 140),
+            width: Math.min(Math.floor(viewfinderWidth * 0.92), 400),
+            height: Math.min(Math.floor(viewfinderHeight * 0.55), 200),
           };
         }
         const edge = Math.min(viewfinderWidth, viewfinderHeight) * 0.72;
@@ -293,7 +295,7 @@ export default function QrScanner({
       try {
         const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import('html5-qrcode');
         const formatsToSupport = target === 'barcode'
-          ? [Html5QrcodeSupportedFormats.CODE_128]
+          ? [Html5QrcodeSupportedFormats.CODE_128, Html5QrcodeSupportedFormats.CODE_39]
           : [Html5QrcodeSupportedFormats.QR_CODE];
 
         const fallbackScanner = new Html5Qrcode(divId.current, {
