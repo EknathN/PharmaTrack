@@ -264,6 +264,34 @@ export interface DatabaseSchema {
 
 // Find real path of data.json regardless of where node was launched
 function getDbPath(): string {
+  // If running on Vercel or serverless environment with read-only root filesystem
+  if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    const tmpPath = path.join('/tmp', 'data.json');
+    if (!fsSync.existsSync(tmpPath)) {
+      const cwd = process.cwd();
+      const possibleSources = [
+        path.join(cwd, 'data.json'),
+        path.join(cwd, 'frontend', 'data.json'),
+      ];
+      let copied = false;
+      for (const p of possibleSources) {
+        if (fsSync.existsSync(p)) {
+          try {
+            fsSync.copyFileSync(p, tmpPath);
+            copied = true;
+            break;
+          } catch (e) {}
+        }
+      }
+      if (!copied) {
+        try {
+          fsSync.writeFileSync(tmpPath, JSON.stringify(getEmptyDb(), null, 2), 'utf-8');
+        } catch (e) {}
+      }
+    }
+    return tmpPath;
+  }
+
   const cwd = process.cwd();
   const directPath = path.join(cwd, 'data.json');
   const frontendPath = path.join(cwd, 'frontend', 'data.json');

@@ -1,0 +1,20 @@
+{
+  "name": "pharmatrack-pro",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PharmaTrack Pro - Pharmaceutical Track & Trace, Dual-Scan Verification, and Bio-Disposal Auditing",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "start": "npm --prefix frontend run start",
+    "lint": "npm --prefix frontend run lint"
+  },
+  "keywords": [
+    "pharmatrack",
+    "nextjs",
+    "track-and-trace",
+    "pharmaceutical"
+  ],
+  "author": "PharmaTrack Team",
+  "license": "MIT"
+}
